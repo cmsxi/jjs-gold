@@ -5,6 +5,20 @@
       <div class="content">
         <div class="search-section">
           <div class="search-controls">
+            <div class="search-box">
+              <select class="search-filter" name="searchFilter">
+                <option value="가맹점명">가맹점명</option> 
+                <option value="주소">주소</option>
+                <option value="전화번호">전화번호</option>
+              </select>
+              <input 
+                type="text" 
+                v-model="searchQuery"
+                placeholder="검색어 입력"
+                class="search-input"
+              />
+              <button @click="searchLocations" class="search-button">검색</button>
+            </div>
             <div class="region-buttons">
               <button 
                 v-for="region in regions" 
@@ -14,15 +28,6 @@
               >
                 {{ region.label }}
               </button>
-            </div>
-            <div class="search-box">
-              <input 
-                type="text" 
-                v-model="searchQuery"
-                placeholder="점포명 입력"
-                class="search-input"
-              />
-              <button @click="searchLocations" class="search-button">검색</button>
             </div>
           </div>
         </div>
@@ -81,17 +86,26 @@ const selectedRegion = ref('')
 
 const regions = ref([
   { value: '', label: '전체' },
-  { value: '강남구', label: '강남구' },
-  { value: '서초구', label: '서초구' },
-  { value: '송파구', label: '송파구' },
-  { value: '마포구', label: '마포구' },
-  { value: '종로구', label: '종로구' },
-  { value: '중구', label: '중구' },
-  { value: '영등포구', label: '영등포구' },
-  { value: '용산구', label: '용산구' },
-  { value: '성동구', label: '성동구' },
-  { value: '강서구', label: '강서구' },
-  { value: '관악구', label: '관악구' }
+  { value: '본점', label: '본점' },
+  { value: '서울강남', label: '서울강남' },
+  { value: '서울강북', label: '서울강북' },
+  { value: '경기남부', label: '경기남부' },
+  { value: '경기북부', label: '경기북부' },
+  { value: '인천', label: '인천' },
+  { value: '부산', label: '부산' },
+  { value: '울산', label: '울산' },
+  { value: '경상남도', label: '경상남도' },
+  { value: '경상북도', label: '경상북도' },
+  { value: '대구', label: '대구' },
+  { value: '대전', label: '대전' },
+  { value: '세종', label: '세종' },
+  { value: '충청남도', label: '충청남도' },
+  { value: '충청북도', label: '충청북도' },
+  { value: '전라남도', label: '전라남도' },
+  { value: '전라북도', label: '전라북도' },
+  { value: '광주', label: '광주' },
+  { value: '강원도', label: '강원도' },
+  { value: '제주', label: '제주' },
 ])
 
 const locations = ref([
@@ -264,7 +278,9 @@ const selectRegion = (regionValue) => {
 }
 
 const searchLocations = () => {
-  console.log('검색:', searchQuery.value)
+  let sel = document.querySelector("select[name=searchFilter]")
+  const selectedFilter = sel.options[sel.selectedIndex].value;  
+  console.log('검색:', selectedFilter, searchQuery.value)
 }
 
 const showMap = (location) => {
@@ -295,9 +311,10 @@ const contactPartnership = () => {
   margin: 0 auto;
 }
 
+/* 검색 섹션 */ 
 .search-section {
   background: white;
-  padding: 1.5rem;
+  padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   margin-bottom: 2rem;
@@ -306,53 +323,32 @@ const contactPartnership = () => {
 .search-controls {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
+  align-items: center;
 }
-
-.region-buttons {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.region-button {
-  padding: 0.6rem 1.2rem;
-  background: #f8f9fa;
-  color: #666;
-  border: 2px solid #e9ecef;
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.region-button:hover {
-  background: #e9ecef;
-  border-color: #666;
-}
-
-.region-button.active {
-  background: #666;
-  color: white;
-  border-color: #666;
-}
-
 .search-box {
   display: flex;
   gap: 0.5rem;
-  max-width: 400px;
+  width: 100%; 
+  max-width: 1000px;
+  justify-content: center;
 }
-
+.search-filter{
+  max-width: 120px; 
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px; 
+  font-size: 0.9rem;
+  background: white;
+}
 .search-input {
   flex: 1;
   padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 0.9rem;
+  min-width: 180px;
 }
-
 .search-button {
   padding: 0.75rem 1.5rem;
   background: #666;
@@ -362,11 +358,50 @@ const contactPartnership = () => {
   cursor: pointer;
   font-size: 0.9rem;
   white-space: nowrap;
+  transition: background-color 0.2s ease;
 }
-
 .search-button:hover {
   background: #555;
 }
+
+/*지역 버튼 그리드 */
+.region-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 1000px;
+  justify-items: center;
+}
+.region-button {
+  padding: 0.5rem 1rem;
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  text-align: center;
+}
+.region-button:hover {
+  background: #e9ecef;
+  border-color: #666;
+}
+.region-button.active {
+  background: #666;
+  color: white;
+  border-color: #666;
+}
+
+
+
+
+
+
 
 .table-section {
   background: white;
