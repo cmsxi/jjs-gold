@@ -52,7 +52,11 @@
                   <td class="location-name">{{ location.name }}</td>
                   <td class="address">{{ location.address }}</td>
                   <td class="phone">{{ location.phone }}</td>
-                  <td></td>
+                  <td> 
+                    <button class="talk-button">
+                      <span class="talk-text">톡채널</span> 
+                    </button>
+                  </td>
                   <td>
                     <button @click="showMap(location)" class="map-button">MAP</button>
                   </td>
@@ -343,7 +347,7 @@ const contactPartnership = () => {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 0.9rem;
-  min-width: 180px;
+  min-width: 100px;
 }
 .search-button {
   padding: 0.75rem 1.5rem;
@@ -466,6 +470,32 @@ const contactPartnership = () => {
   font-family: monospace;
 }
 
+/* 톡상담 버튼 스타일 */
+.talk-button {
+  background: #FFD700;
+  border: none;
+  border-radius: 25px;
+  gap: 6px;
+  padding: 0.4rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  min-width: 80px;
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+}
+.talk-button:hover {
+  background: #FFC107;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4);
+}
+.talk-text {
+  color: #333;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .map-button {
   background: #666;
   color: white;
@@ -476,7 +506,6 @@ const contactPartnership = () => {
   font-size: 0.8rem;
   font-weight: 500;
 }
-
 .map-button:hover {
   background: #555;
 }
@@ -543,20 +572,30 @@ const contactPartnership = () => {
   }
   
   .region-buttons {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
     justify-content: center;
   }
   
   .region-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
+    padding: 0.5rem 0.3rem;
+    font-size: 0.75rem;
+    min-width: 100px;
   }
   
+  .search-button, .search-filter {
+    font-size: 0.75rem; 
+    padding: 0.5rem 0.8rem;
+  }
+  .search-section {
+    padding: 1rem;
+  }
   .search-box {
     max-width: none;
   }
   
   .locations-table {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
   
   .locations-table th,
@@ -566,6 +605,26 @@ const contactPartnership = () => {
   
   .address {
     max-width: none;
+  }
+
+  .talk-button {
+    padding: 0.4rem 0.4rem;
+    font-size: 0.7rem;
+    min-width: 25px;
+    gap: 0.1rem;
+  }
+  
+  .talk-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+  .talk-text {
+    font-size: 0.75rem;
+  }
+
+  .map-button{
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
   }
   
   .no-results {
