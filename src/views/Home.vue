@@ -18,15 +18,55 @@
                 <span class="text-white/90"> 금 매입 시세</span>
               </h2>
             <div class="mb-10 mt-2 w-full text-center justify-center">
-              <span class="inline-flex items-center gap-2 text-lg md:text-xl font-medium text-white/90 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20">
-                {{ today }} 기준
-              </span>
+              <div class="flex items-center justify-center gap-4">
+                <span class="inline-flex items-center gap-2 text-lg md:text-xl font-medium text-white/90 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20">
+                  {{ today }} 기준
+                </span>
+                
+                <!-- 새로고침 버튼 -->
+                <button 
+                  @click="loadPrices"
+                  :disabled="isLoadingPrices"
+                  class="inline-flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full border border-white/20 text-white/80 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="시세 새로고침"
+                >
+                  <svg 
+                    :class="isLoadingPrices ? 'animate-spin' : ''" 
+                    class="w-4 h-4" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                  <span class="text-sm font-medium">{{ isLoadingPrices ? '로딩...' : '새로고침' }}</span>
+                </button>
+              </div>
+              
+              <!-- 에러 메시지 -->
+              <div v-if="pricesError" class="mt-3 text-center">
+                <span class="inline-flex items-center gap-2 text-sm text-red-300 bg-red-500/20 backdrop-blur-md rounded-full px-3 py-1 border border-red-400/30">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                  {{ pricesError }}
+                </span>
+              </div>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3 stats-grid">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3 stats-grid relative">
+              <!-- 로딩 오버레이 -->
+              <div v-if="isLoadingPrices" class="absolute inset-0 bg-black/20 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+                <div class="flex flex-col items-center gap-3 text-white">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                  <span class="text-sm font-medium">시세 업데이트 중...</span>
+                </div>
+              </div>
+              
               <div 
                 v-for="item in prices" 
                 :key="item.type" 
                 class="glass-card bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 md:p-5 lg:p-5 shadow-xl hover:scale-102 transition-all duration-300 group flex justify-between flex-col"
+                :class="isLoadingPrices ? 'opacity-70' : ''"
               >
                 <div class="flex items-center gap-2 mb-2 md:mb-3">
                   <div 
@@ -127,17 +167,17 @@
             </div>
           
           <form @submit.prevent="onSubmit" class="premium-form bg-white rounded-3xl shadow-2xl p-8 border border-gray-100 hover:shadow-3xl transition-all duration-500">
-            <div class="space-y-6">
+            <div class="space-y-8">
               <div class="floating-label-group">
                 <input 
                   v-model="form.name" 
                   id="name" 
                   type="text" 
                   required 
-                  class="floating-input peer w-full border-0 border-b-2 border-gray-200 bg-transparent px-0 py-3 text-slate-700 placeholder-transparent focus:border-primary focus:outline-none transition-colors duration-300"
+                  class="floating-input w-full border-0 border-b-2 border-gray-200 bg-transparent px-0 py-3 text-slate-700 placeholder-transparent focus:border-primary focus:outline-none transition-colors duration-300"
                   placeholder="성함"
                 />
-                <label for="name" class="floating-label absolute left-0 top-3 text-gray-500 transition-all duration-300 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:text-sm peer-focus:text-primary peer-valid:-top-2 peer-valid:text-sm">
+                <label for="name" class="floating-label text-gray-500">
                   성함 <span class="text-red-500">*</span>
                 </label>
               </div>
@@ -148,10 +188,10 @@
                   id="phone" 
                   type="tel" 
                   required 
-                  class="floating-input peer w-full border-0 border-b-2 border-gray-200 bg-transparent px-0 py-3 text-slate-700 placeholder-transparent focus:border-primary focus:outline-none transition-colors duration-300"
+                  class="floating-input w-full border-0 border-b-2 border-gray-200 bg-transparent px-0 py-3 text-slate-700 placeholder-transparent focus:border-primary focus:outline-none transition-colors duration-300"
                   placeholder="연락처"
                 />
-                <label for="phone" class="floating-label absolute left-0 top-3 text-gray-500 transition-all duration-300 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:text-sm peer-focus:text-primary peer-valid:-top-2 peer-valid:text-sm">
+                <label for="phone" class="floating-label text-gray-500">
                   연락처 <span class="text-red-500">*</span>
                 </label>
               </div>
@@ -162,10 +202,10 @@
                   id="region" 
                   type="text" 
                   required 
-                  class="floating-input peer w-full border-0 border-b-2 border-gray-200 bg-transparent px-0 py-3 text-slate-700 placeholder-transparent focus:border-primary focus:outline-none transition-colors duration-300"
+                  class="floating-input w-full border-0 border-b-2 border-gray-200 bg-transparent px-0 py-3 text-slate-700 placeholder-transparent focus:border-primary focus:outline-none transition-colors duration-300"
                   placeholder="거주지역"
                 />
-                <label for="region" class="floating-label absolute left-0 top-3 text-gray-500 transition-all duration-300 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:text-sm peer-focus:text-primary peer-valid:-top-2 peer-valid:text-sm">
+                <label for="region" class="floating-label text-gray-500">
                   거주지역 <span class="text-red-500">*</span>
                 </label>
               </div>
@@ -173,10 +213,39 @@
             
             <button 
               type="submit" 
-              class="premium-button w-full mt-8 bg-gradient-to-r from-primary to-gray-600 text-white font-medium py-4 rounded-2xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 relative overflow-hidden group"
+              :disabled="isSubmitting"
+              class="premium-button w-full mt-8 bg-gradient-to-r from-primary to-gray-600 text-white font-medium py-4 rounded-2xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 relative overflow-hidden group disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <span class="relative z-10">신청하기</span>
+              <span class="relative z-10 flex items-center justify-center gap-2">
+                <svg v-if="isSubmitting" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ isSubmitting ? '문의 접수 중...' : '신청하기' }}
+              </span>
               <div class="absolute inset-0 bg-gradient-to-r from-gray-600 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </button>
+            
+            <!-- 카카오 채널 문의 구분선 -->
+            <div class="flex items-center my-6">
+              <div class="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+              <span class="px-4 text-sm text-gray-500 bg-white">더 빠른 상담을 원하시나요?</span>
+              <div class="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+            </div>
+            
+            <!-- 카카오 채널 문의 버튼 -->
+            <button 
+              @click="openKakaoChannel"
+              type="button" 
+              class="kakao-button w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-800 font-medium py-4 rounded-2xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 relative overflow-hidden group border border-yellow-300"
+            >
+              <span class="relative z-10 flex items-center justify-center gap-3">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.8l-.8 3.1c-.1.4.3.7.6.5L10.4 19c.5.1 1 .1 1.6.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/>
+                </svg>
+                카카오 채널 문의하기
+              </span>
+              <div class="absolute inset-0 bg-gradient-to-r from-yellow-500 to-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
           </form>
           
@@ -197,46 +266,64 @@
 </template>
 
 <script setup>
-import { ref, h } from 'vue'
+import { ref, h, onMounted, onUnmounted } from 'vue'
 import CountUp from '@/components/CountUp.vue'
+import { jinjungsungService } from '@/services/jinjungsungService.js'
 import logoWhite from '@/assets/images/logo-white.png'
+import consIcon from '@/assets/images/cons.png'
+import deliveryIcon from '@/assets/images/delivery.png'
+import maniIcon from '@/assets/images/mani.png'
+import messIcon from '@/assets/images/mess.png'
+import paymentIcon from '@/assets/images/payment.png'
 
 // 오늘 날짜 (한국 기준)
-const today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Seoul' })
+const today = ref('')
 
-// 더미 시세 데이터
-const prices = [
-  { type: 'gold24k', label: '금 24K', price: 870200, change: +300 },
-  { type: 'gold18k', label: '금 18K', price: 654000, change: -200 },
-  { type: 'gold14k', label: '금 14K', price: 51200, change: 0 },
-  { type: 'silver', label: '은', price: 1100, change: +10 },
-  { type: 'platinum', label: '백금(Pt)', price: 43200, change: -100 },
-]
+// 시세 데이터 (API로부터)
+const prices = ref([
+  { type: 'gold24k', label: '금 24K', price: 870200, change: 0 },
+  { type: 'gold18k', label: '금 18K', price: 654000, change: 0 },
+  { type: 'gold14k', label: '금 14K', price: 512000, change: 0 },
+  { type: 'silver', label: '은', price: 1100, change: 0 },
+  { type: 'platinum', label: '백금(Pt)', price: 432000, change: 0 },
+])
+
+// 로딩 상태
+const isLoadingPrices = ref(false)
+const pricesError = ref('')
 
 // 매입 절차 단계
 const steps = [
   {
-    icon: () => h('svg', { class: 'w-10 h-10', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' })
-    ]),
+    icon: () => h('img', { 
+      src: messIcon, 
+      alt: '전화 및 카톡 상담', 
+      class: 'w-16 h-16 object-contain' 
+    }),
     text: '전화 및 카톡 상담'
   },
   {
-    icon: () => h('svg', { class: 'w-10 h-10', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z' })
-    ]),
+    icon: () => h('img', { 
+      src: maniIcon, 
+      alt: '방문 감정', 
+      class: 'w-12 h-12 object-contain' 
+    }),
     text: '방문 감정'
   },
   {
-    icon: () => h('svg', { class: 'w-10 h-10', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 0V4m0 8v8' })
-    ]),
+    icon: () => h('img', { 
+      src: consIcon, 
+      alt: '매입가 협의', 
+      class: 'w-16 h-16 object-contain' 
+    }),
     text: '매입가 협의'
   },
   {
-    icon: () => h('svg', { class: 'w-10 h-10', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [
-      h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M17 9V7a5 5 0 00-10 0v2a5 5 0 00-1 9.9V19a2 2 0 002 2h8a2 2 0 002-2v-.1A5 5 0 0017 9z' })
-    ]),
+    icon: () => h('img', { 
+      src: paymentIcon, 
+      alt: '대금 정산', 
+      class: 'w-16 h-16 object-contain' 
+    }),
     text: '대금 정산'
   }
 ]
@@ -244,13 +331,156 @@ const steps = [
 // 협력점 문의 폼
 const form = ref({ name: '', phone: '', region: '' })
 const toast = ref(false)
+const isSubmitting = ref(false)
 
-function onSubmit() {
+async function onSubmit() {
   if (!form.value.name || !form.value.phone || !form.value.region) return
-  toast.value = true
-  setTimeout(() => { toast.value = false }, 3000)
-  form.value = { name: '', phone: '', region: '' }
+  
+  isSubmitting.value = true
+  
+  try {
+    await jinjungsungService.submitCourseRegistration({
+      name: form.value.name,
+      phone: form.value.phone,
+      location: form.value.region
+    })
+    
+    toast.value = true
+    setTimeout(() => { toast.value = false }, 3000)
+    form.value = { name: '', phone: '', region: '' }
+  } catch (error) {
+    console.error('협력점 개설 문의 오류:', error)
+    alert('문의 접수 중 오류가 발생했습니다. 다시 시도해 주세요.')
+  } finally {
+    isSubmitting.value = false
+  }
 }
+
+function openKakaoChannel() {
+  // 카카오 채널 문의 로직을 구현해야 합니다.
+  console.log('카카오 채널 문의 버튼이 클릭되었습니다.')
+}
+
+// 오늘 날짜 업데이트
+const updateTodayDate = () => {
+  today.value = new Date().toLocaleDateString('ko-KR', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric', 
+    timeZone: 'Asia/Seoul' 
+  })
+}
+
+// 시세 데이터 로드
+const loadPrices = async () => {
+  if (isLoadingPrices.value) return
+  
+  isLoadingPrices.value = true
+  pricesError.value = ''
+  
+  try {
+    const response = await jinjungsungService.getTodayPrices()
+    
+    if (response.data?.prices) {
+      // API 데이터를 화면에 맞는 형태로 변환
+      const apiPrices = response.data.prices
+      const updatedPrices = []
+      
+      // API 응답을 기존 구조에 맞게 매핑
+      apiPrices.forEach(priceInfo => {
+        if (priceInfo.name.includes('24K')) {
+          updatedPrices.push({
+            type: 'gold24k',
+            label: '금 24K',
+            price: priceInfo.price || 870200,
+            change: priceInfo.change || 0
+          })
+        } else if (priceInfo.name.includes('18K')) {
+          updatedPrices.push({
+            type: 'gold18k',
+            label: '금 18K',
+            price: priceInfo.price || 654000,
+            change: priceInfo.change || 0
+          })
+        } else if (priceInfo.name.includes('14K')) {
+          updatedPrices.push({
+            type: 'gold14k',
+            label: '금 14K',
+            price: priceInfo.price || 512000,
+            change: priceInfo.change || 0
+          })
+        } else if (priceInfo.name.includes('은')) {
+          updatedPrices.push({
+            type: 'silver',
+            label: '은',
+            price: priceInfo.price || 1100,
+            change: priceInfo.change || 0
+          })
+        } else if (priceInfo.name.includes('백금')) {
+          updatedPrices.push({
+            type: 'platinum',
+            label: '백금(Pt)',
+            price: priceInfo.price || 432000,
+            change: priceInfo.change || 0
+          })
+        }
+      })
+      
+      // 누락된 데이터가 있으면 기본값으로 채우기
+      const defaultPrices = [
+        { type: 'gold24k', label: '금 24K', price: 870200, change: 0 },
+        { type: 'gold18k', label: '금 18K', price: 654000, change: 0 },
+        { type: 'gold14k', label: '금 14K', price: 512000, change: 0 },
+        { type: 'silver', label: '은', price: 1100, change: 0 },
+        { type: 'platinum', label: '백금(Pt)', price: 432000, change: 0 },
+      ]
+      
+      const finalPrices = defaultPrices.map(defaultPrice => {
+        const apiPrice = updatedPrices.find(p => p.type === defaultPrice.type)
+        return apiPrice || defaultPrice
+      })
+      
+      prices.value = finalPrices
+      
+      // API에서 today_date를 제공하면 사용
+      if (response.data?.today_date) {
+        today.value = response.data.today_date
+      }
+    }
+    
+    console.log('시세 데이터 로드 성공:', response.data)
+    
+  } catch (error) {
+    console.error('시세 데이터 로드 실패:', error)
+    pricesError.value = '시세 정보를 불러오는데 실패했습니다.'
+    
+    // 에러시 기본 날짜 설정
+    updateTodayDate()
+  } finally {
+    isLoadingPrices.value = false
+  }
+}
+
+// 주기적 업데이트 (5분마다)
+let priceUpdateInterval = null
+
+// 컴포넌트 마운트
+onMounted(async () => {
+  updateTodayDate()
+  await loadPrices()
+  
+  // 5분마다 시세 업데이트
+  priceUpdateInterval = setInterval(async () => {
+    await loadPrices()
+  }, 300000) // 5분 = 300,000ms
+})
+
+// 컴포넌트 언마운트
+onUnmounted(() => {
+  if (priceUpdateInterval) {
+    clearInterval(priceUpdateInterval)
+  }
+})
 </script>
 
 <style scoped>
@@ -276,19 +506,36 @@ function onSubmit() {
 /* 플로팅 레이블 */
 .floating-label-group {
   position: relative;
-  margin: 1.5rem 0;
+  padding-top: 1.25rem;
 }
 
 .floating-label {
+  position: absolute;
+  left: 0;
+  top: 2rem;
   pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: left top;
+  z-index: 1;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.floating-input {
+  position: relative;
+  z-index: 2;
+  padding-top: 1.25rem !important;
 }
 
 .floating-input:focus + .floating-label,
-.floating-input:valid + .floating-label,
 .floating-input:not(:placeholder-shown) + .floating-label {
-  transform: translateY(-1.5rem);
-  font-size: 0.875rem;
-  color: var(--primary-color, #333343);
+  transform: translateY(-1.25rem) scale(0.875);
+  color: #D4AF37;
+  font-weight: 500;
+}
+
+.floating-input:focus {
+  border-color: #D4AF37 !important;
 }
 
 /* 프리미엄 그림자 */

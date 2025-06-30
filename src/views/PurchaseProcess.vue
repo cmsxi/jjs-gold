@@ -21,7 +21,7 @@
           <template v-for="(step, index) in currentProcessData.steps" :key="index">
             <div class="flex flex-col items-center text-center">
               <div
-                class="w-20 h-20 lg:w-24 lg:h-24 bg-primary rounded-2xl flex items-center justify-center mb-4 transition-transform duration-300 hover:scale-105"
+                class="w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-primary to-gray-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg transition-all duration-300 hover:scale-105"
               >
                 <component
                   :is="step.icon"
@@ -87,6 +87,12 @@
 <script setup>
 import { ref, h, computed } from "vue";
 import TabComponent from "@/components/common/TabComponent.vue";
+import consIcon from '@/assets/images/cons.png'
+import deliveryIcon from '@/assets/images/delivery.png'
+import maniIcon from '@/assets/images/mani.png'
+import messIcon from '@/assets/images/mess.png'
+import paymentIcon from '@/assets/images/payment.png'
+import boxIcon from '@/assets/images/box.png'
 
 const activeTab = ref("visit");
 
@@ -102,87 +108,35 @@ const processData = {
     title: "방문매입절차안내",
     steps: [
       {
-        icon: () =>
-          h(
-            "svg",
-            {
-              class: "w-10 h-10",
-              fill: "none",
-              stroke: "currentColor",
-              "stroke-width": "2",
-              viewBox: "0 0 24 24",
-            },
-            [
-              h("path", {
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-                d: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-              }),
-            ]
-          ),
+        icon: () => h('img', { 
+          src: messIcon, 
+          alt: '전화 및 카톡 상담', 
+          class: 'w-16 h-16 object-contain' 
+        }),
         text: "전화 및 카톡 상담",
       },
       {
-        icon: () =>
-          h(
-            "svg",
-            {
-              class: "w-10 h-10",
-              fill: "none",
-              stroke: "currentColor",
-              "stroke-width": "2",
-              viewBox: "0 0 24 24",
-            },
-            [
-              h("path", {
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-                d: "M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z",
-              }),
-            ]
-          ),
+        icon: () => h('img', { 
+          src: maniIcon, 
+          alt: '방문 감정', 
+          class: 'w-16 h-16 object-contain' 
+        }),
         text: "방문 감정",
       },
       {
-        icon: () =>
-          h(
-            "svg",
-            {
-              class: "w-10 h-10",
-              fill: "none",
-              stroke: "currentColor",
-              "stroke-width": "2",
-              viewBox: "0 0 24 24",
-            },
-            [
-              h("path", {
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-                d: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 0V4m0 8v8",
-              }),
-            ]
-          ),
+        icon: () => h('img', { 
+          src: consIcon, 
+          alt: '매입가 협의',
+          class: 'w-16 h-16 object-contain' 
+        }),
         text: "매입가 협의",
       },
       {
-        icon: () =>
-          h(
-            "svg",
-            {
-              class: "w-10 h-10",
-              fill: "none",
-              stroke: "currentColor",
-              "stroke-width": "2",
-              viewBox: "0 0 24 24",
-            },
-            [
-              h("path", {
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-                d: "M17 9V7a5 5 0 00-10 0v2a5 5 0 00-1 9.9V19a2 2 0 002 2h8a2 2 0 002-2v-.1A5 5 0 0017 9z",
-              }),
-            ]
-          ),
+        icon: () => h('img', { 
+          src: paymentIcon, 
+          alt: '대금 정산', 
+          class: 'w-16 h-16 object-contain' 
+        }),
         text: "대금 정산",
       },
     ],
@@ -209,88 +163,36 @@ const processData = {
     title: "택배매입절차안내",
     steps: [
       {
-        icon: () =>
-          h(
-            "svg",
-            {
-              class: "w-10 h-10",
-              fill: "none",
-              stroke: "currentColor",
-              "stroke-width": "2",
-              viewBox: "0 0 24 24",
-            },
-            [
-              h("path", {
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-                d: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-              }),
-            ]
-          ),
+        icon: () => h('img', { 
+          src: messIcon, 
+          alt: '전화 및 카톡 상담', 
+          class: 'w-16 h-16 object-contain' 
+        }),
         text: "전화 및 카톡 상담",
       },
       {
-        icon: () =>
-          h(
-            "svg",
-            {
-              class: "w-10 h-10",
-              fill: "none",
-              stroke: "currentColor",
-              "stroke-width": "2",
-              viewBox: "0 0 24 24",
-            },
-            [
-              h("path", {
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-                d: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 21v-4a2 2 0 012-2h2a2 2 0 012 2v4",
-              }),
-            ]
-          ),
+        icon: () => h('img', { 
+          src: boxIcon, 
+          alt: '택배발송', 
+          class: 'w-16 h-16 object-contain' 
+        }),
         text: "택배발송",
       },
       {
-        icon: () =>
-          h(
-            "svg",
-            {
-              class: "w-10 h-10",
-              fill: "none",
-              stroke: "currentColor",
-              "stroke-width": "2",
-              viewBox: "0 0 24 24",
-            },
-            [
-              h("path", {
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-                d: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
-              }),
-            ]
-          ),
+        icon: () => h('img', { 
+          src: maniIcon, 
+          alt: '정밀감정', 
+          class: 'w-16 h-16 object-contain' 
+        }),
         text: "정밀감정",
       },
       {
-        icon: () =>
-          h(
-            "svg",
-            {
-              class: "w-10 h-10",
-              fill: "none",
-              stroke: "currentColor",
-              "stroke-width": "2",
-              viewBox: "0 0 24 24",
-            },
-            [
-              h("path", {
-                "stroke-linecap": "round",
-                "stroke-linejoin": "round",
-                d: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
-              }),
-            ]
-          ),
-        text: "계좌입금",
+        icon: () => h('img', { 
+          src: paymentIcon, 
+          alt: '대금 정산', 
+          class: 'w-16 h-16 object-contain' 
+        }),
+        text: "대금 정산",
       },
     ],
     details: [

@@ -34,18 +34,33 @@
       <!-- 차트 섹션 -->
       <div class="bg-white rounded-lg p-8 shadow-lg mb-8 border border-gray-100">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-          <h2 class="text-2xl font-semibold text-secondary">시세 차트</h2>
+          <div class="flex items-center gap-4">
+            <h2 class="text-2xl font-semibold text-secondary">시세 차트</h2>
+            
+            <!-- 새로고침 버튼 -->
+            <button
+              @click="refreshData"
+              :disabled="isLoading"
+              class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <svg :class="isLoading ? 'animate-spin' : ''" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              {{ isLoading ? '로딩 중...' : '새로고침' }}
+            </button>
+          </div>
           
           <!-- 기간 선택 버튼 -->
           <div class="flex flex-wrap gap-2">
             <button
               v-for="period in periods"
               :key="period.value"
-              @click="selectedPeriod = period.value"
+              @click="handlePeriodChange(period.value)"
+              :disabled="isChartLoading"
               :class="selectedPeriod === period.value 
                 ? 'bg-gradient-to-r from-primary to-yellow-600 text-white shadow-md' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-              class="px-4 py-2 rounded-md font-medium transition-all duration-200"
+              class="px-4 py-2 rounded-md font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ period.label }}
             </button>
@@ -57,21 +72,41 @@
           <button
             v-for="category in categories"
             :key="category.id"
-            @click="selectedCategory = category.id"
+            @click="handleCategoryChange(category.id)"
+            :disabled="isChartLoading"
             :class="selectedCategory === category.id 
               ? 'bg-gradient-to-r from-primary to-yellow-600 text-white shadow-md' 
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-            class="px-6 py-3 rounded-md font-semibold transition-all duration-200"
+            class="px-6 py-3 rounded-md font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ category.name }}
           </button>
+        </div>
+
+        <!-- API 에러 메시지 -->
+        <div v-if="apiError" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div class="flex items-center gap-2 text-red-700">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            <span>{{ apiError }}</span>
+          </div>
+          <p class="text-sm text-red-600 mt-1">일부 데이터는 임시 데이터로 표시됩니다.</p>
         </div>
 
         <!-- 차트와 실시간 데이터 -->
         <div class="grid lg:grid-cols-3 gap-6 mb-6">
           <!-- 차트 -->
           <div class="lg:col-span-2">
-            <div class="h-96">
+            <div class="h-96 relative">
+              <!-- 차트 로딩 오버레이 -->
+              <div v-if="isChartLoading" class="absolute inset-0 bg-white/80 flex items-center justify-center z-10 rounded-lg">
+                <div class="flex flex-col items-center gap-3">
+                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <span class="text-sm text-gray-600">차트 데이터 로드 중...</span>
+                </div>
+              </div>
+              
               <Line
                 :data="chartData"
                 :options="chartOptions"
@@ -165,7 +200,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { jinjungsungService } from '@/services/jinjungsungService.js'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -191,6 +227,9 @@ ChartJS.register(
 // 반응형 데이터
 const selectedPeriod = ref('1M')
 const selectedCategory = ref('gold')
+const isLoading = ref(false)
+const isChartLoading = ref(false)
+const apiError = ref('')
 
 // 기간 선택 옵션
 const periods = [
@@ -209,52 +248,65 @@ const categories = [
   { id: 'all', name: '전체' }
 ]
 
-// 오늘의 시세 데이터
-const todayPrices = [
-  { name: '금 24K', price: 870200, change: 1.2 },
-  { name: '금 18K', price: 654000, change: 0.8 },
-  { name: '금 14K', price: 512000, change: -0.3 },
-  { name: '은', price: 1100, change: 2.1 },
-  { name: '백금', price: 432000, change: -1.5 }
-]
+// API 데이터
+const todayPricesData = ref(null)
+const chartDataFromApi = ref(null)
+const realtimePricesData = ref(null)
 
-// 금 시세 데이터
-const goldPrices = [
-  { type: '금 24K', purity: '순도 99.9%', price: 870200, change: 1.2 },
-  { type: '금 18K', purity: '순도 75.0%', price: 654000, change: 0.8 },
-  { type: '금 14K', purity: '순도 58.5%', price: 512000, change: -0.3 }
-]
-
-// 은/백금 시세 데이터
-const otherMetals = [
-  { type: '은', unit: '1g 기준', price: 1100, change: 2.1 },
-  { type: '백금', unit: '1g 기준', price: 432000, change: -1.5 }
-]
+// 오늘의 시세 데이터 (API로부터)
+const todayPrices = computed(() => {
+  if (!todayPricesData.value?.data?.prices) {
+    // 기본 더미 데이터
+    return [
+      { name: '금 24K', price: 870200, change: 0 },
+      { name: '금 18K', price: 654000, change: 0 },
+      { name: '금 14K', price: 512000, change: 0 },
+      { name: '은', price: 1100, change: 0 },
+      { name: '백금', price: 432000, change: 0 }
+    ]
+  }
+  
+  return todayPricesData.value.data.prices.map(price => ({
+    name: price.name,
+    price: price.price || 0,
+    change: price.change || 0
+  }))
+})
 
 // 실시간 시세 데이터 (차트 옆에 표시)
 const currentPriceData = computed(() => {
-  if (selectedCategory.value === 'gold') {
-    return [
-      { name: '금 24K', price: 870200, change: 1.2, unit: '1g' },
-      { name: '금 18K', price: 654000, change: 0.8, unit: '1g' },
-      { name: '금 14K', price: 512000, change: -0.3, unit: '1g' }
-    ]
-  } else if (selectedCategory.value === 'silver') {
-    return [
-      { name: '은', price: 1100, change: 2.1, unit: '1g' }
-    ]
-  } else if (selectedCategory.value === 'platinum') {
-    return [
-      { name: '백금', price: 432000, change: -1.5, unit: '1g' }
-    ]
-  } else {
-    return [
-      { name: '금 24K', price: 870200, change: 1.2, unit: '1g' },
-      { name: '금 18K', price: 654000, change: 0.8, unit: '1g' },
-      { name: '은', price: 1100, change: 2.1, unit: '1g' },
-      { name: '백금', price: 432000, change: -1.5, unit: '1g' }
-    ]
+  if (!realtimePricesData.value?.data?.prices) {
+    // 기본 더미 데이터
+    if (selectedCategory.value === 'gold') {
+      return [
+        { name: '금 24K', price: 870200, change: 1.2, unit: '1g' },
+        { name: '금 18K', price: 654000, change: 0.8, unit: '1g' },
+        { name: '금 14K', price: 512000, change: -0.3, unit: '1g' }
+      ]
+    } else if (selectedCategory.value === 'silver') {
+      return [
+        { name: '은', price: 1100, change: 2.1, unit: '1g' }
+      ]
+    } else if (selectedCategory.value === 'platinum') {
+      return [
+        { name: '백금', price: 432000, change: -1.5, unit: '1g' }
+      ]
+    } else {
+      return [
+        { name: '금 24K', price: 870200, change: 1.2, unit: '1g' },
+        { name: '금 18K', price: 654000, change: 0.8, unit: '1g' },
+        { name: '은', price: 1100, change: 2.1, unit: '1g' },
+        { name: '백금', price: 432000, change: -1.5, unit: '1g' }
+      ]
+    }
   }
+
+  return realtimePricesData.value.data.prices.map(price => ({
+    name: price.name,
+    price: price.price || 0,
+    change: price.change || 0,
+    unit: price.unit || '1g'
+  }))
 })
 
 // 마지막 업데이트 시간
@@ -263,32 +315,96 @@ const lastUpdateTime = ref('')
 // 오늘 날짜
 const todayDate = ref('')
 
-// 현재 시간 업데이트
-const updateTime = () => {
-  const now = new Date()
-  lastUpdateTime.value = now.toLocaleString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-  
-  // 오늘 날짜 업데이트
-  todayDate.value = now.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+// 데이터 로딩 함수들
+const loadTodayPrices = async () => {
+  try {
+    const response = await jinjungsungService.getTodayPrices()
+    todayPricesData.value = response
+    
+    // 업데이트 시간 설정
+    if (response.data?.update_time) {
+      const updateDate = new Date(response.data.update_time)
+      lastUpdateTime.value = updateDate.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+    }
+    
+    // 오늘 날짜 설정
+    if (response.data?.today_date) {
+      todayDate.value = response.data.today_date
+    }
+    
+  } catch (error) {
+    console.error('오늘의 시세 로드 실패:', error)
+    apiError.value = '시세 정보를 불러오는데 실패했습니다.'
+  }
 }
 
-// 컴포넌트 마운트 시 시간 업데이트
-onMounted(() => {
-  updateTime()
-  // 30초마다 시간 업데이트
-  setInterval(updateTime, 30000)
-})
+const loadChartData = async () => {
+  isChartLoading.value = true
+  
+  try {
+    const response = await jinjungsungService.getChartData(selectedPeriod.value, selectedCategory.value)
+    chartDataFromApi.value = response
+  } catch (error) {
+    console.error('차트 데이터 로드 실패:', error)
+    apiError.value = '차트 데이터를 불러오는데 실패했습니다.'
+  } finally {
+    isChartLoading.value = false
+  }
+}
+
+const loadRealtimePrices = async () => {
+  try {
+    const response = await jinjungsungService.getRealtimePrices(selectedCategory.value)
+    realtimePricesData.value = response
+    
+    // 업데이트 시간 설정
+    if (response.data?.last_update) {
+      const updateDate = new Date(response.data.last_update)
+      lastUpdateTime.value = updateDate.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+    }
+  } catch (error) {
+    console.error('실시간 시세 로드 실패:', error)
+    // 실시간 시세 실패는 조용히 처리 (더미 데이터 사용)
+  }
+}
+
+// 현재 시간 업데이트 (API 연결 실패시 fallback)
+const updateTime = () => {
+  const now = new Date()
+  if (!lastUpdateTime.value) {
+    lastUpdateTime.value = now.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  }
+  
+  // 오늘 날짜 업데이트
+  if (!todayDate.value) {
+    todayDate.value = now.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+}
 
 // 가격 포맷팅 함수
 const formatPrice = (price) => {
@@ -296,11 +412,11 @@ const formatPrice = (price) => {
     style: 'currency',
     currency: 'KRW',
     minimumFractionDigits: 0
-  }).format(price)
+  }).format(price || 0)
 }
 
-// 더미 차트 데이터 생성
-const generateChartData = () => {
+// 더미 차트 데이터 생성 (API 실패시 백업)
+const generateDummyChartData = () => {
   const days = 30
   const labels = []
   const today = new Date()
@@ -328,7 +444,17 @@ const generateChartData = () => {
 
 // 차트 데이터
 const chartData = computed(() => {
-  const { labels, generatePriceData } = generateChartData()
+  // API 데이터가 있으면 사용
+  if (chartDataFromApi.value?.data) {
+    const apiData = chartDataFromApi.value.data
+    return {
+      labels: apiData.labels || [],
+      datasets: apiData.datasets || []
+    }
+  }
+  
+  // API 데이터가 없으면 더미 데이터 생성
+  const { labels, generatePriceData } = generateDummyChartData()
   
   const datasets = []
   
@@ -412,6 +538,65 @@ const chartOptions = {
     mode: 'index'
   }
 }
+
+// 기간/카테고리 변경 시 데이터 다시 로드
+const handlePeriodChange = async (period) => {
+  selectedPeriod.value = period
+  await loadChartData()
+}
+
+const handleCategoryChange = async (category) => {
+  selectedCategory.value = category
+  await Promise.all([
+    loadChartData(),
+    loadRealtimePrices()
+  ])
+}
+
+// 새로고침 함수
+const refreshData = async () => {
+  isLoading.value = true
+  apiError.value = ''
+  
+  try {
+    await Promise.all([
+      loadTodayPrices(),
+      loadChartData(),
+      loadRealtimePrices()
+    ])
+  } catch (error) {
+    console.error('데이터 새로고침 실패:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 주기적 업데이트
+let updateInterval = null
+
+// 컴포넌트 마운트 시 초기 로드
+onMounted(async () => {
+  updateTime()
+  await refreshData()
+  
+  // 30초마다 시간 업데이트
+  updateInterval = setInterval(() => {
+    updateTime()
+  }, 30000)
+  
+  // 5분마다 데이터 새로고침
+  setInterval(async () => {
+    await loadTodayPrices()
+    await loadRealtimePrices()
+  }, 300000) // 5분 = 300,000ms
+})
+
+// 컴포넌트 언마운트 시 클린업
+onUnmounted(() => {
+  if (updateInterval) {
+    clearInterval(updateInterval)
+  }
+})
 </script>
 
 <style scoped>

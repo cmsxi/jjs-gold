@@ -7,6 +7,7 @@ import FAQ from '../views/FAQ.vue';
 import LocationFinder from '../views/LocationFinder.vue';
 import Partnership from '../views/Partnership.vue';
 import RegisterStore from '@/views/RegisterStore.vue';
+import ApiTestComponent from '../components/ApiTestComponent.vue';
 import '../assets/styles/global.css';
 
 const routes = [
@@ -17,6 +18,8 @@ const routes = [
     { path: '/location-finder', name: 'LocationFinder', component: LocationFinder },
     { path: '/partnership', name: 'Partnership', component: Partnership },
     { path: '/register-store', name: 'RegisterStore', component: RegisterStore},
+    // API 테스트 페이지 (개발 환경에서만 표시)
+    { path: '/api-test', name: 'ApiTest', component: ApiTestComponent },
 ]
 
 const router = createRouter({

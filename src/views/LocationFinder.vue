@@ -69,7 +69,9 @@
             <div class="no-results-content">
               <h3 class="no-results-title">현재 지점이 없습니다.</h3>
               <p class="no-results-text">선택하신 지역에는 아직 지점이 없습니다.<br>협력점 개설에 관심이 있으시다면 아래 버튼을 클릭해주세요.</p>
-              <button @click="contactPartnership" class="partnership-button">협력점 문의하기</button>
+              <button @click="contactPartnership" class="partnership-button">
+                <span>협력점 문의하기</span>
+              </button>
             </div>
           </div>
         </div>
@@ -545,7 +547,7 @@ const contactPartnership = () => {
 
 .partnership-button {
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(to right, #aa8b5d, #6b7280);
   color: white;
   border: none;
   border-radius: 25px;
@@ -554,12 +556,36 @@ const contactPartnership = () => {
   font-weight: 600;
   white-space: nowrap;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(170, 139, 93, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
 .partnership-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(170, 139, 93, 0.4);
+}
+
+.partnership-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to right, #6b7280, #aa8b5d);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.partnership-button:hover::before {
+  opacity: 1;
+}
+
+.partnership-button span {
+  position: relative;
+  z-index: 2;
 }
 
 @media (max-width: 768px) {

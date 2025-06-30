@@ -45,6 +45,8 @@
           <li><router-link to="/purchase-process" @click="closeMobileMenu" class="hover:text-primary transition">매입 절차</router-link></li>
           <li><router-link to="/faq" @click="closeMobileMenu" class="hover:text-primary transition">자주 묻는 질문</router-link></li>
           <li><router-link to="/location-finder" @click="closeMobileMenu" class="hover:text-primary transition">지점 찾기</router-link></li>
+          <!-- 개발 환경에서만 표시 -->
+          <li v-if="isDev"><router-link to="/api-test" @click="closeMobileMenu" class="hover:text-red-400 transition text-red-300">🔧 API 테스트</router-link></li>
         </ul>
         <div class="mt-10 px-8">
           <router-link to="/partnership" @click="closeMobileMenu" class="block w-full text-center bg-primary text-white px-6 py-3 rounded font-semibold shadow hover:bg-primary/90 transition">협력점 문의</router-link>
@@ -55,10 +57,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const isHidden = ref(false)
 const isMobileMenuOpen = ref(false)
+
+// 개발 환경 확인
+const isDev = computed(() => import.meta.env.DEV)
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value

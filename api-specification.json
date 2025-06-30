@@ -1,0 +1,380 @@
+{
+  "api_endpoints": {
+    "today_prices": {
+      "url": "/api/gold/today-prices",
+      "method": "GET",
+      "description": "오늘의 금속별 시세 정보",
+             "response_example": {
+         "status": "success",
+         "data": {
+           "update_time": "2024-01-15T10:30:00+09:00",
+           "today_date": "2024년 1월 15일",
+           "prices": [
+            {
+              "metal_type": "gold_24k",
+              "name": "금 24K",
+              "price": 870200,
+              "change": 1.2,
+              "change_amount": 10200,
+              "unit": "KRW/g",
+              "purity": "99.9%"
+            },
+            {
+              "metal_type": "gold_18k", 
+              "name": "금 18K",
+              "price": 654000,
+              "change": 0.8,
+              "change_amount": 5200,
+              "unit": "KRW/g",
+              "purity": "75.0%"
+            },
+            {
+              "metal_type": "gold_14k",
+              "name": "금 14K", 
+              "price": 512000,
+              "change": -0.3,
+              "change_amount": -1500,
+              "unit": "KRW/g",
+              "purity": "58.5%"
+            },
+            {
+              "metal_type": "silver",
+              "name": "은",
+              "price": 1100,
+              "change": 2.1,
+              "change_amount": 23,
+              "unit": "KRW/g",
+              "purity": "99.9%"
+            },
+            {
+              "metal_type": "platinum",
+              "name": "백금",
+              "price": 432000,
+              "change": -1.5,
+              "change_amount": -6500,
+              "unit": "KRW/g",
+              "purity": "99.9%"
+            }
+          ]
+        }
+      }
+    },
+    
+         "chart_data": {
+       "url": "/api/gold/chart-data",
+       "method": "GET", 
+       "description": "시세 차트 데이터",
+       "parameters": {
+         "period": {
+           "type": "string",
+           "enum": ["1W", "1M", "3M", "6M", "1Y"],
+           "description": "조회 기간"
+         },
+         "category": {
+           "type": "string", 
+           "enum": ["gold", "silver", "platinum", "all"],
+           "description": "금속 카테고리"
+         }
+       },
+       "response_example": {
+         "status": "success",
+         "data": {
+           "period": "1M",
+           "category": "gold",
+           "last_update": "2024-01-15T10:30:15+09:00",
+           "labels": [
+             "12/16", "12/17", "12/18", "12/19", "12/20",
+             "12/23", "12/24", "12/26", "12/27", "12/30",
+             "12/31", "1/2", "1/3", "1/4", "1/5",
+             "1/8", "1/9", "1/10", "1/11", "1/12", "1/15"
+           ],
+           "datasets": [
+             {
+               "label": "금 24K",
+               "metal_type": "gold_24k",
+               "data": [
+                 865000, 867500, 869000, 871200, 868900,
+                 870100, 872300, 869800, 871500, 873200,
+                 870800, 869500, 872100, 870300, 871800,
+                 869200, 870900, 872600, 869700, 871400, 870200
+               ],
+               "borderColor": "#FFD700",
+               "backgroundColor": "rgba(255, 215, 0, 0.1)",
+               "tension": 0.4
+             },
+             {
+               "label": "금 18K", 
+               "metal_type": "gold_18k",
+               "data": [
+                 648750, 650625, 651750, 653400, 651675,
+                 652575, 654225, 652350, 653625, 654900,
+                 653100, 652125, 654075, 652725, 653850,
+                 651900, 653175, 654450, 652275, 653550, 654000
+               ],
+               "borderColor": "#FFA500",
+               "backgroundColor": "rgba(255, 165, 0, 0.1)",
+               "tension": 0.4
+             },
+             {
+               "label": "금 14K",
+               "metal_type": "gold_14k", 
+               "data": [
+                 507000, 508750, 509500, 511200, 508900,
+                 510100, 512300, 509800, 511500, 513200,
+                 510800, 509500, 512100, 510300, 511800,
+                 509200, 510900, 512600, 509700, 511400, 512000
+               ],
+               "borderColor": "#DAA520",
+               "backgroundColor": "rgba(218, 165, 32, 0.1)",
+               "tension": 0.4
+             },
+             {
+               "label": "은",
+               "metal_type": "silver",
+               "data": [
+                 1095, 1098, 1101, 1103, 1099,
+                 1102, 1105, 1100, 1104, 1107,
+                 1103, 1101, 1106, 1102, 1105,
+                 1099, 1103, 1108, 1101, 1104, 1100
+               ],
+               "borderColor": "#C0C0C0",
+               "backgroundColor": "rgba(192, 192, 192, 0.1)",
+               "tension": 0.4
+             },
+             {
+               "label": "백금",
+               "metal_type": "platinum",
+               "data": [
+                 430000, 431500, 433000, 434200, 431900,
+                 433100, 435300, 432800, 434500, 436200,
+                 433800, 432500, 435100, 433300, 434800,
+                 432200, 433900, 435600, 432700, 434400, 432000
+               ],
+               "borderColor": "#E5E4E2",
+               "backgroundColor": "rgba(229, 228, 226, 0.1)",
+               "tension": 0.4
+             }
+           ]
+         }
+       }
+     },
+
+         "realtime_prices": {
+       "url": "/api/gold/realtime-prices",
+       "method": "GET",
+       "description": "실시간 시세 정보 (차트 옆 테이블용)",
+       "parameters": {
+         "category": {
+           "type": "string",
+           "enum": ["gold", "silver", "platinum", "all"],
+           "description": "금속 카테고리"
+         }
+       },
+       "response_example": {
+         "status": "success",
+         "data": {
+           "last_update": "2024-01-15T10:30:15+09:00",
+           "prices": [
+             {
+               "name": "금 24K",
+               "price": 870200,
+               "change": 1.2,
+               "unit": "1g"
+             },
+             {
+               "name": "금 18K", 
+               "price": 654000,
+               "change": 0.8,
+               "unit": "1g"
+             },
+             {
+               "name": "금 14K",
+               "price": 512000,
+               "change": -0.3,
+               "unit": "1g"
+             }
+           ]
+         }
+       }
+     },
+
+    "price_history": {
+      "url": "/api/gold/price-history",
+      "method": "GET",
+      "description": "시세 이력 조회",
+      "parameters": {
+        "metal_type": {
+          "type": "string",
+          "enum": ["gold_24k", "gold_18k", "gold_14k", "silver", "platinum"],
+          "description": "금속 타입"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date",
+          "description": "시작 날짜 (YYYY-MM-DD)"
+        },
+        "end_date": {
+          "type": "string", 
+          "format": "date",
+          "description": "종료 날짜 (YYYY-MM-DD)"
+        },
+        "limit": {
+          "type": "integer",
+          "default": 100,
+          "description": "조회 개수 제한"
+        }
+      },
+      "response_example": {
+        "status": "success",
+        "data": {
+          "metal_type": "gold_24k",
+          "period": {
+            "start_date": "2024-01-01",
+            "end_date": "2024-01-15"
+          },
+          "history": [
+            {
+              "date": "2024-01-15",
+              "open_price": 869500,
+              "high_price": 872300,
+              "low_price": 868200,
+              "close_price": 870200,
+              "volume": 1250,
+              "change": 1.2,
+              "change_amount": 10200
+            },
+            {
+              "date": "2024-01-14",
+              "open_price": 858700,
+              "high_price": 869800,
+              "low_price": 857500,
+              "close_price": 860000,
+              "volume": 1180,
+              "change": 0.8,
+              "change_amount": 6800
+            }
+          ],
+          "total_count": 15,
+          "page": 1,
+          "has_more": false
+        }
+      }
+    },
+
+    "market_status": {
+      "url": "/api/gold/market-status", 
+      "method": "GET",
+      "description": "시장 상태 정보",
+      "response_example": {
+        "status": "success",
+        "data": {
+          "market_open": true,
+          "market_hours": {
+            "open_time": "09:00:00+09:00",
+            "close_time": "18:00:00+09:00",
+            "timezone": "Asia/Seoul"
+          },
+          "next_update": "2024-01-15T10:31:00+09:00",
+          "update_interval": 30,
+          "announcements": [
+            {
+              "id": 1,
+              "type": "notice",
+              "title": "설날 연휴 시세 업데이트 안내",
+              "content": "2024년 2월 9일~12일 설날 연휴 기간 중 시세 업데이트가 제한됩니다.",
+              "created_at": "2024-01-10T14:00:00+09:00"
+            }
+          ]
+        }
+      }
+    }
+  },
+
+  "error_responses": {
+    "400": {
+      "status": "error",
+      "error_code": "INVALID_PARAMETER",
+      "message": "잘못된 파라미터입니다.",
+      "details": {
+        "field": "period",
+        "value": "invalid_period",
+        "allowed_values": ["1W", "1M", "3M", "6M", "1Y"]
+      }
+    },
+    "404": {
+      "status": "error", 
+      "error_code": "DATA_NOT_FOUND",
+      "message": "요청하신 데이터를 찾을 수 없습니다."
+    },
+    "500": {
+      "status": "error",
+      "error_code": "INTERNAL_SERVER_ERROR", 
+      "message": "서버 내부 오류가 발생했습니다."
+    },
+    "503": {
+      "status": "error",
+      "error_code": "SERVICE_UNAVAILABLE",
+      "message": "시세 서비스가 일시적으로 이용할 수 없습니다."
+    }
+  },
+
+  "data_types": {
+    "metal_types": {
+      "gold_24k": "금 24K (순도 99.9%)",
+      "gold_18k": "금 18K (순도 75.0%)",  
+      "gold_14k": "금 14K (순도 58.5%)",
+      "silver": "은 (순도 99.9%)",
+      "platinum": "백금 (순도 99.9%)"
+    },
+    "categories": {
+      "gold": "금 시세",
+      "silver": "은 시세", 
+      "platinum": "백금 시세",
+      "all": "전체 시세"
+    },
+         "periods": {
+       "1W": "1주일",
+       "1M": "1개월",
+       "3M": "3개월", 
+       "6M": "6개월",
+       "1Y": "1년"
+     }
+   },
+
+   "usage_guide": {
+     "description": "GoldPrice.vue 컴포넌트와 API 연동 가이드",
+     "implementation_steps": [
+       {
+         "step": 1,
+         "title": "오늘의 시세 로드",
+         "code": "const { data } = await api.get('/api/gold/today-prices')\ntodayPrices.value = data.prices\ntodayDate.value = data.today_date"
+       },
+       {
+         "step": 2,
+         "title": "차트 데이터 로드",
+         "code": "const { data } = await api.get('/api/gold/chart-data', {\n  params: { period: selectedPeriod.value, category: selectedCategory.value }\n})\nchartData.value = data"
+       },
+       {
+         "step": 3,
+         "title": "실시간 시세 로드",
+         "code": "const { data } = await api.get('/api/gold/realtime-prices', {\n  params: { category: selectedCategory.value }\n})\ncurrentPriceData.value = data.prices\nlastUpdateTime.value = data.last_update"
+       },
+       {
+         "step": 4,
+         "title": "30초마다 자동 업데이트",
+         "code": "setInterval(async () => {\n  await loadTodayPrices()\n  await loadRealtimePrices()\n}, 30000)"
+       }
+     ],
+     "recommended_libraries": [
+       "axios 또는 fetch API",
+       "Chart.js (이미 사용 중)",
+       "Vue 3 Composition API (이미 사용 중)"
+     ],
+     "notes": [
+       "실제 구현 시 try-catch로 에러 처리 필수",
+       "로딩 상태 관리 권장",
+       "차트 데이터는 Chart.js 형식으로 바로 사용 가능",
+       "시세 업데이트 간격은 서버 성능에 따라 조정 가능"
+     ]
+   }
+} 
