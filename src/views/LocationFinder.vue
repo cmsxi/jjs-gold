@@ -7,7 +7,7 @@
           <div class="search-controls">
             <div class="search-box">
               <select class="search-filter" name="searchFilter">
-                <option value="가맹점명">가맹점명</option> 
+                <option value="가맹점명">협력점명</option> 
                 <option value="주소">주소</option>
                 <option value="전화번호">전화번호</option>
               </select>
@@ -38,25 +38,21 @@
             <table class="locations-table">
               <thead>
                 <tr>
-                  <th>자치</th>
-                  <th>종류</th>
-                  <th>지점명</th>
+                  <th>지역</th>
+                  <th>협력점명</th>
                   <th>주소</th>
                   <th>전화번호</th>
-                  <th>순무목</th>
-                  <th>영업시간</th>
-                  <th>위치</th>
+                  <th>문의하기</th>
+                  <th>약도보기</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="location in filteredLocations" :key="location.id">
                   <td>{{ location.district }}</td>
-                  <td>{{ location.type }}</td>
                   <td class="location-name">{{ location.name }}</td>
                   <td class="address">{{ location.address }}</td>
                   <td class="phone">{{ location.phone }}</td>
-                  <td>{{ location.category }}</td>
-                  <td>{{ location.hours }}</td>
+                  <td></td>
                   <td>
                     <button @click="showMap(location)" class="map-button">MAP</button>
                   </td>
@@ -111,7 +107,7 @@ const regions = ref([
 const locations = ref([
   {
     id: 1,
-    district: '강남구',
+    district: '서울강남',
     type: '금매매소',
     name: '진정성 금거래소',
     address: '서울 강남구 테헤란로 123, 한국경제신문빌딩 5층',
@@ -121,7 +117,7 @@ const locations = ref([
   },
   {
     id: 2,
-    district: '서초구',
+    district: '서울강남',
     type: '금거래점',
     name: '황금마을',
     address: '서울 서초구 서초대로 456, 한국경제타워 3층',
@@ -131,9 +127,9 @@ const locations = ref([
   },
   {
     id: 3,
-    district: '강남구',
+    district: '서울강남',
     type: '김현철',
-    name: '서울 강남구 올림픽로 650, 1동 101-2층',
+    name: '김현철',
     address: '서울 강남구 올림픽로 650, 1동 101-2층',
     phone: '02-471-1202',
     category: '귀금속',
@@ -141,9 +137,9 @@ const locations = ref([
   },
   {
     id: 4,
-    district: '강남구',
+    district: '서울강남',
     type: '강진자율회',
-    name: '서울 강남구 선릉로 433, 마곡2지오타워',
+    name: '강진자율회',
     address: '서울 강남구 선릉로 433, 마곡2지오타워',
     phone: '02-3663-0008',
     category: '귀금속',
@@ -151,9 +147,9 @@ const locations = ref([
   },
   {
     id: 5,
-    district: '강남구',
+    district: '서울강남',
     type: '고려아이투리금천점',
-    name: '서울 강남구 영동대로 40, 1층',
+    name: '고려아이투리금천점',
     address: '서울 강남구 영동대로 40, 1층',
     phone: '02-3017-4878',
     category: '귀금속',
@@ -161,9 +157,9 @@ const locations = ref([
   },
   {
     id: 6,
-    district: '강남구',
+    district: '서울강남',
     type: '금억의',
-    name: '서울 강남구 남부순환로 2948, 1층 코트롬',
+    name: '금억의',
     address: '서울 강남구 남부순환로 2948, 1층 코트롬',
     phone: '02-878-7706',
     category: '귀금속',
@@ -171,9 +167,9 @@ const locations = ref([
   },
   {
     id: 7,
-    district: '강남구',
+    district: '서울강남',
     type: '금헌의',
-    name: '서울 강남구 서래동로 390, 1층 코트롬',
+    name: '금헌의',
     address: '서울 강남구 서래동로 390, 1층 코트롬',
     phone: '02-807-7707',
     category: '귀금속',
@@ -181,9 +177,9 @@ const locations = ref([
   },
   {
     id: 8,
-    district: '강남구',
+    district: '서울강남',
     type: '논현의',
-    name: '서울 강남구 밤둥이로 514, 1층',
+    name: '논현의',
     address: '서울 강남구 밤둥이로 514, 1층',
     phone: '02-518-9993',
     category: '귀금속',
@@ -191,7 +187,7 @@ const locations = ref([
   },
   {
     id: 9,
-    district: '송파구',
+    district: '서울강남',
     type: '금매매소',
     name: '송파골드센터',
     address: '서울 송파구 잠실대로 300, 롯데월드몰 B1층',
@@ -201,7 +197,7 @@ const locations = ref([
   },
   {
     id: 10,
-    district: '마포구',
+    district: '서울강북',
     type: '금거래점',
     name: '홍대금은방',
     address: '서울 마포구 홍대로 240, 홍대입구역 2번출구',
@@ -211,7 +207,7 @@ const locations = ref([
   },
   {
     id: 11,
-    district: '종로구',
+    district: '서울강북',
     type: '전통금은방',
     name: '인사동 전통금은방',
     address: '서울 종로구 인사동길 62, 전통문화의거리',
@@ -221,7 +217,7 @@ const locations = ref([
   },
   {
     id: 12,
-    district: '중구',
+    district: '서울강북',
     type: '금매매소',
     name: '명동골드타워',
     address: '서울 중구 명동길 78, 명동지하상가 A구역',
@@ -231,7 +227,7 @@ const locations = ref([
   },
   {
     id: 13,
-    district: '영등포구',
+    district: '서울강남',
     type: '금거래점',
     name: '여의도 골드플라자',
     address: '서울 영등포구 여의대로 108, IFC몰 B2층',
@@ -241,7 +237,7 @@ const locations = ref([
   },
   {
     id: 14,
-    district: '용산구',
+    district: '서울강북',
     type: '금매매소',
     name: '용산전자상가 금은방',
     address: '서울 용산구 한강대로 23길 55, 용산전자상가 3층',
@@ -398,18 +394,13 @@ const contactPartnership = () => {
 }
 
 
-
-
-
-
-
+/*검색 결과 테이블*/
 .table-section {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   overflow: hidden;
 }
-
 .section-title {
   background: #f8f9fa;
   padding: 1rem 1.5rem;
@@ -419,11 +410,9 @@ const contactPartnership = () => {
   color: #333;
   border-bottom: 1px solid #eee;
 }
-
 .table-container {
   overflow-x: auto;
 }
-
 .locations-table {
   width: 100%;
   border-collapse: collapse;
@@ -431,13 +420,12 @@ const contactPartnership = () => {
   table-layout: fixed;
 }
 
-.locations-table th:nth-child(1) { width: 8%; }    /* 지역역 */
-.locations-table th:nth-child(3) { width: 18%; }   /* 지점명 */
-.locations-table th:nth-child(4) { width: 35%; }   /* 주소 */
-.locations-table th:nth-child(5) { width: 12%; }   /* 전화번호 */
-.locations-table th:nth-child(6) { width: 7%; }    /* 순도 분석기 */
-.locations-table th:nth-child(7) { width: 13%; }   /* 영업시간 */
-.locations-table th:nth-child(8) { width: 6%; }    /* 위치 */
+.locations-table th:nth-child(1) { width: 8%; }    /* 지역 */
+.locations-table th:nth-child(2) { width: 18%; }   /* 협력점명 */
+.locations-table th:nth-child(3) { width: 35%; }   /* 주소 */
+.locations-table th:nth-child(4) { width: 13%; }   /* 전화번호 */
+.locations-table th:nth-child(5) { width: 13%; }    /* 문의하기 */
+.locations-table th:nth-child(6) { width: 13%; }   /* 약도보기 */
 
 .locations-table th {
   background: #f8f9fa;
