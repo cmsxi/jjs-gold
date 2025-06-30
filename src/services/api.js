@@ -2,12 +2,8 @@ import axios from 'axios'
 
 // 환경에 따른 API 기본 URL 설정
 const getApiBaseUrl = () => {
-  // 개발 환경에서는 Vite 프록시 사용
-  if (import.meta.env.DEV) {
-    return '/api/jjs-gold'
-  }
-  // 프로덕션 환경에서는 실제 서버 URL 사용
-  return import.meta.env.VITE_API_BASE_URL || 'http://211.170.168.146:9000/jjs-gold'
+  // 모든 환경에서 상대 경로 사용 (/api/jjs-gold)
+  return '/api/jjs-gold'
 }
 
 const API_BASE_URL = getApiBaseUrl()
