@@ -18,9 +18,9 @@
       </nav>
 
       <!-- 모바일 햄버거 -->
-      <button class="block md:hidden ml-2 z-50" @click="toggleMobileMenu">
+      <button class="block md:hidden ml-2 z-50 p-2 rounded-lg hover:bg-gray-100 transition-colors" @click="toggleMobileMenu">
         <span class="sr-only">모바일 메뉴 열기</span>
-        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
@@ -28,28 +28,63 @@
 
     <!-- 모바일 메뉴 -->
     <transition name="fade">
-      <nav v-if="isMobileMenuOpen" class="fixed inset-0 bg-black/90 z-50 flex flex-col">
-        <div class="flex items-center justify-between h-20 px-4 md:px-8">
-          <router-link to="/" class="flex items-center h-full" @click="closeMobileMenu">
-            <img src="@/assets/images/logo.png" alt="center Logo" class="h-12 w-auto object-contain" />
+      <nav v-if="isMobileMenuOpen" 
+           class="fixed top-0 left-0 w-full bg-gray-800 z-50 flex flex-col"
+           style="height: 100vh; min-height: 100vh;">
+        <!-- 헤더 영역 -->
+        <div class="flex items-center justify-between h-20 px-4 md:px-8 bg-gray-800 border-b border-gray-600">
+          <router-link to="/" class="flex items-center h-full py-4" @click="closeMobileMenu">
+            <img src="@/assets/images/logo-white.png" alt="center Logo" class="h-12 w-auto object-contain" />
           </router-link>
-          <button @click="closeMobileMenu" class="text-white">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <button @click="closeMobileMenu" class="text-white p-2 rounded-lg hover:bg-gray-700 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
-        <ul class="flex flex-col gap-y-6 text-white font-semibold text-lg px-8 mt-8">
-          <li><router-link to="/" @click="closeMobileMenu" class="hover:text-primary transition">메인</router-link></li>
-          <li><router-link to="/gold-price" @click="closeMobileMenu" class="hover:text-primary transition">금 시세 조회</router-link></li>
-          <li><router-link to="/purchase-process" @click="closeMobileMenu" class="hover:text-primary transition">매입 절차</router-link></li>
-          <li><router-link to="/faq" @click="closeMobileMenu" class="hover:text-primary transition">자주 묻는 질문</router-link></li>
-          <li><router-link to="/location-finder" @click="closeMobileMenu" class="hover:text-primary transition">지점 찾기</router-link></li>
-          <!-- 개발 환경에서만 표시 -->
-          <li v-if="isDev"><router-link to="/api-test" @click="closeMobileMenu" class="hover:text-red-400 transition text-red-300">🔧 API 테스트</router-link></li>
-        </ul>
-        <div class="mt-10 px-8">
-          <router-link to="/partnership" @click="closeMobileMenu" class="block w-full text-center bg-primary text-white px-6 py-3 rounded font-semibold shadow hover:bg-primary/90 transition">협력점 문의</router-link>
+        
+        <!-- 메뉴 리스트 -->
+        <div class="flex-1 px-8 py-8 bg-gray-800">
+          <ul class="flex flex-col gap-y-6 text-white font-semibold text-lg">
+            <li>
+              <router-link to="/" @click="closeMobileMenu" 
+                class="block py-3 px-4 rounded-lg transition-colors border-l-4 border-transparent hover:text-primary">
+                메인
+              </router-link>
+            </li>
+            <li>
+              <router-link to="/gold-price" @click="closeMobileMenu" 
+                class="block py-3 px-4 rounded-lg transition-colors border-l-4 border-transparent hover:text-primary">
+                금 시세 조회
+              </router-link>
+            </li>
+            <li>
+              <router-link to="/purchase-process" @click="closeMobileMenu" 
+                class="block py-3 px-4 rounded-lg transition-colors border-l-4 border-transparent hover:text-primary">
+                매입 절차
+              </router-link>
+            </li>
+            <li>
+              <router-link to="/faq" @click="closeMobileMenu" 
+                class="block py-3 px-4 rounded-lg  transition-colors border-l-4 border-transparent hover:text-primary">
+                자주 묻는 질문
+              </router-link>
+            </li>
+            <li>
+              <router-link to="/location-finder" @click="closeMobileMenu" 
+                class="block py-3 px-4 rounded-lg transition-colors border-l-4 border-transparent hover:text-primary">
+                지점 찾기
+              </router-link>
+            </li>
+          </ul>
+        </div>
+        
+        <!-- 하단 버튼 -->
+        <div class="px-8 pb-8 bg-gray-800">
+          <router-link to="/partnership" @click="closeMobileMenu" 
+            class="block w-full text-center bg-gradient-to-r from-primary to-primary/80 text-white px-6 py-4 rounded-lg font-semibold shadow-lg hover:from-primary/90 hover:to-primary/70 transition-all transform">
+            협력점 문의
+          </router-link>
         </div>
       </nav>
     </transition>
@@ -57,13 +92,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 const isHidden = ref(false)
 const isMobileMenuOpen = ref(false)
-
-// 개발 환경 확인
-const isDev = computed(() => import.meta.env.DEV)
 
 function toggleMobileMenu() {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
