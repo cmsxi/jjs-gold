@@ -222,7 +222,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                        <tr v-for="location in locations" :key="location.id" 
+                        <tr v-for="location in paginatedLocations" :key="location.id" 
                             :class="{ 'bg-green-50 border-l-4 border-green-400': location.isNewlyAdded }">
                             <td class="px-4 py-3 text-center">
                                 <input 
@@ -433,10 +433,9 @@ const sortOrder = ref('desc')
 // 페이지네이션 관련 변수들
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
-const totalCount = ref(0)
 
-// 지점 데이터
-const locations = ref([])
+// 지점 데이터 (모든 데이터)
+const allLocations = ref([])
 
 // 지역 매칭 맵
 const regionMap = {
@@ -653,29 +652,15 @@ const handlePhoneInput = (event) => {
     }
 }
 
-// 지점 데이터 로드
+// 지점 데이터 로드 (모든 데이터 한 번에 로드)
 const loadLocations = async () => {
     try {
         loading.value = true
         error.value = ''
         
-        const params = {
-            page: currentPage.value,
-            limit: itemsPerPage.value,
-            searchQuery: searchQuery.value,
-            searchFilter: searchFilter.value,
-            district: selectedRegionFilter.value,
-            sortBy: sortField.value,
-            sortOrder: sortOrder.value
-        }
-        
-        const [locationsResponse, countResponse] = await Promise.all([
-            jinjungsungService.getRegisterStoreLocations(params),
-            jinjungsungService.getRegisterStoreLocationsCount(params)
-        ])
-        
-        locations.value = locationsResponse.locations || locationsResponse || []
-        totalCount.value = countResponse.count || countResponse || 0
+        // 모든 지점 데이터를 한 번에 가져오기
+        const response = await jinjungsungService.getRegisterStoreLocations()
+        allLocations.value = response.locations || response || []
         
         // 체크박스 선택 초기화
         selectedLocationIds.value = []
@@ -688,6 +673,71 @@ const loadLocations = async () => {
         loading.value = false
     }
 }
+
+// 필터링된 지점 목록 (검색어, 지역 필터 적용)
+const filteredLocations = computed(() => {
+    let filtered = [...allLocations.value]
+    
+    // 검색어 필터링
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        filtered = filtered.filter(location => {
+            if (searchFilter.value === '협력점명') {
+                return location.name?.toLowerCase().includes(query)
+            } else if (searchFilter.value === '주소') {
+                return location.address?.toLowerCase().includes(query) || 
+                       location.detailAddress?.toLowerCase().includes(query)
+            } else if (searchFilter.value === '전화번호') {
+                return location.phone?.includes(query)
+            }
+            return false
+        })
+    }
+    
+    // 지역 필터링
+    if (selectedRegionFilter.value) {
+        filtered = filtered.filter(location => location.district === selectedRegionFilter.value)
+    }
+    
+    return filtered
+})
+
+// 정렬된 지점 목록
+const sortedLocations = computed(() => {
+    const sorted = [...filteredLocations.value]
+    
+    sorted.sort((a, b) => {
+        let aValue = a[sortField.value]
+        let bValue = b[sortField.value]
+        
+        // 날짜 필드 처리
+        if (sortField.value === 'created_at') {
+            aValue = new Date(aValue)
+            bValue = new Date(bValue)
+        }
+        
+        // 문자열 비교
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+            aValue = aValue.toLowerCase()
+            bValue = bValue.toLowerCase()
+        }
+        
+        if (sortOrder.value === 'asc') {
+            return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+        } else {
+            return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+        }
+    })
+    
+    return sorted
+})
+
+// 페이지네이션 적용된 지점 목록
+const paginatedLocations = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage.value
+    const end = start + itemsPerPage.value
+    return sortedLocations.value.slice(start, end)
+})
 
 // 전화번호 유효성 검증
 const validatePhoneNumber = (phone) => {
@@ -771,7 +821,6 @@ const handleSearchInput = () => {
     
     searchTimer = setTimeout(() => {
         currentPage.value = 1
-        loadLocations()
     }, 300)
 }
 
@@ -779,7 +828,6 @@ const handleSearchInput = () => {
 const selectRegion = (regionValue) => {
     selectedRegionFilter.value = regionValue
     currentPage.value = 1
-    loadLocations()
 }
 
 // 정렬
@@ -792,21 +840,19 @@ const sortBy = (field) => {
     }
     
     currentPage.value = 1
-    loadLocations()
 }
 
 // 페이지 변경
 const changePage = (page) => {
     if (page >= 1 && page <= totalPages.value) {
         currentPage.value = page
-        loadLocations()
     }
 }
 
 // 전체 선택/해제
 const toggleSelectAll = () => {
     if (selectAll.value) {
-        selectedLocationIds.value = locations.value.map(location => location.id)
+        selectedLocationIds.value = paginatedLocations.value.map(location => location.id)
     } else {
         selectedLocationIds.value = []
     }
@@ -944,7 +990,11 @@ const logout = () => {
 
 // 계산된 속성들
 const totalPages = computed(() => {
-    return Math.ceil(totalCount.value / itemsPerPage.value)
+    return Math.ceil(sortedLocations.value.length / itemsPerPage.value)
+})
+
+const totalCount = computed(() => {
+    return sortedLocations.value.length
 })
 
 const startItem = computed(() => {
@@ -952,7 +1002,7 @@ const startItem = computed(() => {
 })
 
 const endItem = computed(() => {
-    return Math.min(currentPage.value * itemsPerPage.value, totalCount.value)
+    return Math.min(currentPage.value * itemsPerPage.value, sortedLocations.value.length)
 })
 
 const visiblePages = computed(() => {
@@ -976,7 +1026,7 @@ const visiblePages = computed(() => {
 })
 
 const selectedLocations = computed(() => {
-    return locations.value.filter(location => selectedLocationIds.value.includes(location.id))
+    return paginatedLocations.value.filter(location => selectedLocationIds.value.includes(location.id))
 })
 
 // 검색 필터 변경 감지

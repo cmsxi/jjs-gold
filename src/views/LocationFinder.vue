@@ -58,8 +58,8 @@
         </div>
         
         <div v-else class="table-section">
-          <h2 class="section-title">검색결과</h2>
-          <div class="table-container" v-if="locations.length > 0">
+          <h2 class="section-title">검색결과 ({{ totalCount }}개)</h2>
+          <div class="table-container" v-if="paginatedLocations.length > 0">
             <table class="locations-table">
               <thead>
                 <tr>
@@ -72,7 +72,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="location in locations" :key="location.id">
+                <tr v-for="location in paginatedLocations" :key="location.id">
                   <td>{{ location.district }}</td>
                   <td class="location-name">{{ location.name }}</td>
                   <td class="address">
@@ -103,6 +103,54 @@
                 </tr>
               </tbody>
             </table>
+            
+            <!-- 페이지네이션 -->
+            <div class="pagination" v-if="totalPages > 1">
+              <div class="pagination-info">
+                {{ startItem }}-{{ endItem }} / {{ totalCount }}개
+              </div>
+              <div class="pagination-controls">
+                <button 
+                  @click="changePage(1)"
+                  :disabled="currentPage === 1"
+                  class="pagination-button"
+                >
+                  처음
+                </button>
+                <button 
+                  @click="changePage(currentPage - 1)"
+                  :disabled="currentPage === 1"
+                  class="pagination-button"
+                >
+                  이전
+                </button>
+                <template v-for="page in visiblePages" :key="page">
+                  <button 
+                    @click="changePage(page)"
+                    :class="[
+                      'pagination-button',
+                      { active: currentPage === page }
+                    ]"
+                  >
+                    {{ page }}
+                  </button>
+                </template>
+                <button 
+                  @click="changePage(currentPage + 1)"
+                  :disabled="currentPage === totalPages"
+                  class="pagination-button"
+                >
+                  다음
+                </button>
+                <button 
+                  @click="changePage(totalPages)"
+                  :disabled="currentPage === totalPages"
+                  class="pagination-button"
+                >
+                  끝
+                </button>
+              </div>
+            </div>
           </div>
           
           <div class="no-results" v-else>
@@ -121,7 +169,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { jinjungsungService } from '@/services/jinjungsungService.js'
 
@@ -163,23 +211,21 @@ const regions = ref([
 ])
 
 // 지점 데이터
-const locations = ref([])
+const allLocations = ref([])
 
-// 지점 데이터 로드
+// 페이지네이션 관련
+const currentPage = ref(1)
+const itemsPerPage = ref(10)
+
+// 지점 데이터 로드 (모든 데이터 한 번에 로드)
 const loadLocations = async () => {
   try {
     loading.value = true
     error.value = ''
     
-    const params = {
-      searchQuery: searchQuery.value,
-      searchFilter: searchFilter.value,
-      district: selectedRegion.value,
-      activeOnly: true
-    }
-    
-    const response = await jinjungsungService.getPublicLocations(params)
-    locations.value = response.locations || response || []
+    // 모든 활성 지점 데이터를 한 번에 가져오기
+    const response = await jinjungsungService.getPublicLocations()
+    allLocations.value = response.locations || response || []
     
   } catch (err) {
     console.error('지점 데이터 로드 실패:', err)
@@ -189,6 +235,97 @@ const loadLocations = async () => {
   }
 }
 
+// 필터링된 지점 목록 (검색어, 지역 필터 적용)
+const filteredLocations = computed(() => {
+  let filtered = [...allLocations.value]
+  
+  // 검색어 필터링
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(location => {
+      if (searchFilter.value === '협력점명') {
+        return location.name?.toLowerCase().includes(query)
+      } else if (searchFilter.value === '주소') {
+        return location.address?.toLowerCase().includes(query) || 
+               location.detailAddress?.toLowerCase().includes(query)
+      } else if (searchFilter.value === '전화번호') {
+        return location.phone?.includes(query)
+      }
+      return false
+    })
+  }
+  
+  // 지역 필터링
+  if (selectedRegion.value) {
+    filtered = filtered.filter(location => location.district === selectedRegion.value)
+  }
+  
+  return filtered
+})
+
+// 정렬된 지점 목록 (지역순으로 정렬)
+const sortedLocations = computed(() => {
+  const sorted = [...filteredLocations.value]
+  
+  sorted.sort((a, b) => {
+    // 지역순 정렬
+    if (a.district < b.district) return -1
+    if (a.district > b.district) return 1
+    
+    // 같은 지역 내에서는 이름순 정렬
+    if (a.name < b.name) return -1
+    if (a.name > b.name) return 1
+    
+    return 0
+  })
+  
+  return sorted
+})
+
+// 페이지네이션 적용된 지점 목록
+const paginatedLocations = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return sortedLocations.value.slice(start, end)
+})
+
+// 페이지네이션 계산된 속성들
+const totalPages = computed(() => {
+  return Math.ceil(sortedLocations.value.length / itemsPerPage.value)
+})
+
+const totalCount = computed(() => {
+  return sortedLocations.value.length
+})
+
+const startItem = computed(() => {
+  return (currentPage.value - 1) * itemsPerPage.value + 1
+})
+
+const endItem = computed(() => {
+  return Math.min(currentPage.value * itemsPerPage.value, sortedLocations.value.length)
+})
+
+const visiblePages = computed(() => {
+  const current = currentPage.value
+  const total = totalPages.value
+  const pages = []
+  
+  const maxVisible = 5
+  let start = Math.max(1, current - Math.floor(maxVisible / 2))
+  let end = Math.min(total, start + maxVisible - 1)
+  
+  if (end - start + 1 < maxVisible) {
+    start = Math.max(1, end - maxVisible + 1)
+  }
+  
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+  
+  return pages
+})
+
 // 검색 입력 처리 (디바운스)
 const handleSearchInput = () => {
   if (searchTimer) {
@@ -196,14 +333,14 @@ const handleSearchInput = () => {
   }
   
   searchTimer = setTimeout(() => {
-    loadLocations()
+    currentPage.value = 1
   }, 300) // 300ms 딜레이
 }
 
 // 지역 선택
 const selectRegion = (regionValue) => {
   selectedRegion.value = regionValue
-  loadLocations()
+  currentPage.value = 1
 }
 
 // 카카오톡 채널 열기
@@ -225,10 +362,17 @@ const contactPartnership = () => {
   router.push('/partnership')
 }
 
+// 페이지 변경
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
 // 검색 필터 변경 감지
 watch(searchFilter, () => {
   if (searchQuery.value) {
-    loadLocations()
+    currentPage.value = 1
   }
 })
 
@@ -479,6 +623,52 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* 페이지네이션 스타일 */
+.pagination {
+  background: #f9fafb;
+  padding: 1rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pagination-button {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-button.active {
+  background: #374151;
+  color: white;
+  border-color: #374151;
+}
+
 /* 모바일 최적화 */
 @media (max-width: 768px) {
   .search-box {
@@ -514,6 +704,22 @@ onMounted(() => {
   
   .phone-button {
     display: inline;
+  }
+  
+  /* 모바일에서 페이지네이션 간소화 */
+  .pagination {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .pagination-controls {
+    gap: 0.25rem;
+  }
+  
+  .pagination-button {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
   }
 }
 </style> 
