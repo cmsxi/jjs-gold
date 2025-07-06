@@ -34,15 +34,19 @@ export const jinjungsungService = {
    * @param {string} params.searchQuery - 검색어
    * @param {string} params.searchFilter - 검색 필터
    * @param {string} params.district - 지역 필터
+   * @param {string} params.sortBy - 정렬 기준
+   * @param {string} params.sortOrder - 정렬 순서 (asc, desc)
    */
   async getLocations(params = {}) {
     try {
       const queryParams = {
         skip: params.skip || 0,
-        limit: params.limit || 100,
+        limit: params.limit || 10,
         search_query: params.searchQuery || null,
-        search_filter: params.searchFilter || '가맹점명',
-        district: params.district || null
+        search_filter: params.searchFilter || '협력점명',
+        district: params.district || null,
+        sort_by: params.sortBy || 'created_at',
+        sort_order: params.sortOrder || 'desc'
       }
 
       // null 값 제거
@@ -68,7 +72,7 @@ export const jinjungsungService = {
     try {
       const queryParams = {
         search_query: params.searchQuery || null,
-        search_filter: params.searchFilter || '가맹점명',
+        search_filter: params.searchFilter || '협력점명',
         district: params.district || null
       }
 
@@ -166,6 +170,132 @@ export const jinjungsungService = {
         throw new Error('해당 지점을 찾을 수 없습니다.')
       }
       
+      throw new Error(error.response?.data?.detail || '지점 삭제 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 다중 지점 삭제
+   * @param {Array<number>} locationIds - 삭제할 지점 ID 배열
+   */
+  async deleteMultipleLocations(locationIds) {
+    try {
+      if (!Array.isArray(locationIds) || locationIds.length === 0) {
+        throw new Error('삭제할 지점 ID가 필요합니다.')
+      }
+
+      const response = await api.delete('/locations/batch', {
+        data: { location_ids: locationIds }
+      })
+      return response.data
+    } catch (error) {
+      console.error('다중 지점 삭제 오류:', error)
+      throw new Error(error.response?.data?.detail || '지점 삭제 중 오류가 발생했습니다.')
+    }
+  },
+
+  // ========================================
+  // RegisterStore 전용 API 함수들
+  // ========================================
+
+  /**
+   * 지점 등록 페이지용 지점 목록 조회 (페이징 포함)
+   * @param {Object} params - 조회 매개변수
+   * @param {number} params.page - 페이지 번호 (1부터 시작)
+   * @param {number} params.limit - 페이지당 항목 수
+   * @param {string} params.searchQuery - 검색어
+   * @param {string} params.searchFilter - 검색 필터 (협력점명, 주소, 전화번호)
+   * @param {string} params.district - 지역 필터
+   * @param {string} params.sortBy - 정렬 기준
+   * @param {string} params.sortOrder - 정렬 순서
+   */
+  async getRegisterStoreLocations(params = {}) {
+    try {
+      const page = params.page || 1
+      const limit = params.limit || 10
+      const skip = (page - 1) * limit
+
+      const queryParams = {
+        skip,
+        limit,
+        search_query: params.searchQuery || null,
+        search_filter: params.searchFilter || '협력점명',
+        district: params.district || null,
+        sort_by: params.sortBy || 'created_at',
+        sort_order: params.sortOrder || 'desc'
+      }
+
+      // null 값 제거
+      Object.keys(queryParams).forEach(key => {
+        if (queryParams[key] === null) {
+          delete queryParams[key]
+        }
+      })
+
+      const response = await api.get('/register-store/locations', { params: queryParams })
+      return response.data
+    } catch (error) {
+      console.error('지점 목록 조회 오류:', error)
+      throw new Error(error.response?.data?.detail || '지점 목록을 불러오는 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 지점 등록 페이지용 지점 수 조회
+   * @param {Object} params - 조회 매개변수
+   */
+  async getRegisterStoreLocationsCount(params = {}) {
+    try {
+      const queryParams = {
+        search_query: params.searchQuery || null,
+        search_filter: params.searchFilter || '협력점명',
+        district: params.district || null
+      }
+
+      Object.keys(queryParams).forEach(key => {
+        if (queryParams[key] === null) {
+          delete queryParams[key]
+        }
+      })
+
+      const response = await api.get('/register-store/locations/count', { params: queryParams })
+      return response.data
+    } catch (error) {
+      console.error('지점 수 조회 오류:', error)
+      throw new Error(error.response?.data?.detail || '지점 수를 조회하는 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 지점 등록
+   * @param {Object} locationData - 지점 데이터
+   */
+  async registerLocation(locationData) {
+    try {
+      const response = await api.post('/register-store/locations', locationData)
+      return response.data
+    } catch (error) {
+      console.error('지점 등록 오류:', error)
+      throw new Error(error.response?.data?.detail || '지점 등록 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 선택된 지점들 삭제
+   * @param {Array<number>} locationIds - 삭제할 지점 ID 배열
+   */
+  async deleteSelectedLocations(locationIds) {
+    try {
+      if (!Array.isArray(locationIds) || locationIds.length === 0) {
+        throw new Error('삭제할 지점을 선택해주세요.')
+      }
+
+      const response = await api.delete('/register-store/locations/batch', {
+        data: { location_ids: locationIds }
+      })
+      return response.data
+    } catch (error) {
+      console.error('선택 지점 삭제 오류:', error)
       throw new Error(error.response?.data?.detail || '지점 삭제 중 오류가 발생했습니다.')
     }
   },

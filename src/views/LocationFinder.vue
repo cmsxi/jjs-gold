@@ -6,8 +6,8 @@
         <div class="search-section">
           <div class="search-controls">
             <div class="search-box">
-              <select class="search-filter" name="searchFilter">
-                <option value="가맹점명">협력점명</option> 
+              <select v-model="searchFilter" class="search-filter" name="searchFilter">
+                <option value="협력점명">협력점명</option> 
                 <option value="주소">주소</option>
                 <option value="전화번호">전화번호</option>
               </select>
@@ -17,7 +17,6 @@
                 placeholder="검색어 입력"
                 class="search-input"
               />
-              <button @click="searchLocations" class="search-button">검색</button>
             </div>
             <div class="region-buttons">
               <button 
@@ -50,12 +49,27 @@
                 <tr v-for="location in filteredLocations" :key="location.id">
                   <td>{{ location.district }}</td>
                   <td class="location-name">{{ location.name }}</td>
-                  <td class="address">{{ location.address }}</td>
-                  <td class="phone">{{ location.phone }}</td>
+                  <td class="address">
+                    <div>
+                      {{ location.address }}
+                      <span v-if="location.detailAddress" class="detail-address">
+                        ({{ location.detailAddress }})
+                      </span>
+                    </div>
+                  </td>
+                  <td class="phone">
+                    <!-- PC에서 보이는 일반 텍스트 -->
+                    <span class="phone-text">{{ location.phone }}</span>
+                    <!-- 모바일에서 보이는 전화연결 버튼 -->
+                    <a :href="`tel:${location.phone}`" class="phone-button">
+                      {{ location.phone }}
+                    </a>
+                  </td>
                   <td> 
-                    <button class="talk-button">
+                    <button v-if="location.kakaoChannel" @click="openKakaoChannel(location.kakaoChannel)" class="talk-button">
                       <span class="talk-text">톡채널</span> 
                     </button>
+                    <span v-else class="no-channel">-</span>
                   </td>
                   <td>
                     <button @click="showMap(location)" class="map-button">MAP</button>
@@ -85,6 +99,7 @@ import { ref, computed } from 'vue'
 
 const searchQuery = ref('')
 const selectedRegion = ref('')
+const searchFilter = ref('협력점명')
 
 const regions = ref([
   { value: '', label: '전체' },
@@ -113,143 +128,138 @@ const regions = ref([
 const locations = ref([
   {
     id: 1,
-    district: '서울강남',
-    type: '금매매소',
-    name: '진정성 금거래소',
-    address: '서울 강남구 테헤란로 123, 한국경제신문빌딩 5층',
-    phone: '02-744-9999',
-    category: '귀금속',
-    hours: '평일 09:00-18:00'
+    district: '본점',
+    name: '진정성금은 본점',
+    address: '서울특별시 강남구 테헤란로 123',
+    detailAddress: '10층 1001호',
+    phone: '02-1234-5678',
+    kakaoChannel: 'https://pf.kakao.com/_example1'
   },
   {
     id: 2,
     district: '서울강남',
-    type: '금거래점',
-    name: '황금마을',
-    address: '서울 서초구 서초대로 456, 한국경제타워 3층',
-    phone: '02-6203-9950',
-    category: '귀금속',
-    hours: '평일 09:00-18:00'
+    name: '진정성금은 강남점',
+    address: '서울특별시 강남구 역삼동 456',
+    detailAddress: '2층',
+    phone: '02-2345-6789',
+    kakaoChannel: 'https://pf.kakao.com/_example2'
   },
   {
     id: 3,
     district: '서울강남',
-    type: '김현철',
-    name: '김현철',
-    address: '서울 강남구 올림픽로 650, 1동 101-2층',
-    phone: '02-471-1202',
-    category: '귀금속',
-    hours: '평일 09:00-18:00'
+    name: '진정성금은 테헤란점',
+    address: '서울특별시 강남구 테헤란로 789',
+    detailAddress: '1층',
+    phone: '02-3456-7890',
+    kakaoChannel: 'https://pf.kakao.com/_example3'
   },
   {
     id: 4,
     district: '서울강남',
-    type: '강진자율회',
-    name: '강진자율회',
-    address: '서울 강남구 선릉로 433, 마곡2지오타워',
-    phone: '02-3663-0008',
-    category: '귀금속',
-    hours: '평일 09:00-18:00'
+    name: '진정성금은 선릉점',
+    address: '서울특별시 강남구 선릉로 433',
+    detailAddress: '지하 1층',
+    phone: '02-4567-8901',
+    kakaoChannel: 'https://pf.kakao.com/_example4'
   },
   {
     id: 5,
     district: '서울강남',
-    type: '고려아이투리금천점',
-    name: '고려아이투리금천점',
-    address: '서울 강남구 영동대로 40, 1층',
-    phone: '02-3017-4878',
-    category: '귀금속',
-    hours: '평일 09:00-18:00'
+    name: '진정성금은 압구정점',
+    address: '서울특별시 강남구 압구정로 40',
+    detailAddress: '3층',
+    phone: '02-5678-9012',
+    kakaoChannel: 'https://pf.kakao.com/_example5'
   },
   {
     id: 6,
     district: '서울강남',
-    type: '금억의',
-    name: '금억의',
-    address: '서울 강남구 남부순환로 2948, 1층 코트롬',
-    phone: '02-878-7706',
-    category: '귀금속',
-    hours: '평일 09:00-18:00'
+    name: '진정성금은 잠실점',
+    address: '서울특별시 송파구 잠실대로 300',
+    detailAddress: 'B1층',
+    phone: '02-6789-0123',
+    kakaoChannel: 'https://pf.kakao.com/_example6'
   },
   {
     id: 7,
-    district: '서울강남',
-    type: '금헌의',
-    name: '금헌의',
-    address: '서울 강남구 서래동로 390, 1층 코트롬',
-    phone: '02-807-7707',
-    category: '귀금속',
-    hours: '평일 09:00-18:00'
+    district: '서울강북',
+    name: '진정성금은 홍대점',
+    address: '서울특별시 마포구 홍대로 240',
+    detailAddress: '2층',
+    phone: '02-7890-1234',
+    kakaoChannel: 'https://pf.kakao.com/_example7'
   },
   {
     id: 8,
-    district: '서울강남',
-    type: '논현의',
-    name: '논현의',
-    address: '서울 강남구 밤둥이로 514, 1층',
-    phone: '02-518-9993',
-    category: '귀금속',
-    hours: '평일 09:00-18:00'
+    district: '서울강북',
+    name: '진정성금은 인사동점',
+    address: '서울특별시 종로구 인사동길 62',
+    detailAddress: '1층',
+    phone: '02-8901-2345',
+    kakaoChannel: 'https://pf.kakao.com/_example8'
   },
   {
     id: 9,
-    district: '서울강남',
-    type: '금매매소',
-    name: '송파골드센터',
-    address: '서울 송파구 잠실대로 300, 롯데월드몰 B1층',
-    phone: '02-415-7777',
-    category: '귀금속',
-    hours: '평일 10:00-21:00'
+    district: '서울강북',
+    name: '진정성금은 명동점',
+    address: '서울특별시 중구 명동길 78',
+    detailAddress: '지하 1층',
+    phone: '02-9012-3456',
+    kakaoChannel: 'https://pf.kakao.com/_example9'
   },
   {
     id: 10,
     district: '서울강북',
-    type: '금거래점',
-    name: '홍대금은방',
-    address: '서울 마포구 홍대로 240, 홍대입구역 2번출구',
-    phone: '02-324-8888',
-    category: '귀금속',
-    hours: '평일 09:00-19:00'
+    name: '진정성금은 용산점',
+    address: '서울특별시 용산구 한강대로 23길 55',
+    detailAddress: '3층',
+    phone: '02-0123-4567',
+    kakaoChannel: 'https://pf.kakao.com/_example10'
   },
   {
     id: 11,
-    district: '서울강북',
-    type: '전통금은방',
-    name: '인사동 전통금은방',
-    address: '서울 종로구 인사동길 62, 전통문화의거리',
-    phone: '02-736-5555',
-    category: '귀금속',
-    hours: '평일 09:00-18:00'
+    district: '경기남부',
+    name: '진정성금은 수원점',
+    address: '경기도 수원시 영통구 중부대로 123',
+    detailAddress: '1층',
+    phone: '031-1234-5678',
+    kakaoChannel: 'https://pf.kakao.com/_example11'
   },
   {
     id: 12,
-    district: '서울강북',
-    type: '금매매소',
-    name: '명동골드타워',
-    address: '서울 중구 명동길 78, 명동지하상가 A구역',
-    phone: '02-778-9999',
-    category: '귀금속',
-    hours: '평일 09:30-19:30'
+    district: '경기남부',
+    name: '진정성금은 성남점',
+    address: '경기도 성남시 분당구 판교로 456',
+    detailAddress: '2층',
+    phone: '031-2345-6789',
+    kakaoChannel: 'https://pf.kakao.com/_example12'
   },
   {
     id: 13,
-    district: '서울강남',
-    type: '금거래점',
-    name: '여의도 골드플라자',
-    address: '서울 영등포구 여의대로 108, IFC몰 B2층',
-    phone: '02-782-6666',
-    category: '귀금속',
-    hours: '평일 10:00-20:00'
+    district: '경기북부',
+    name: '진정성금은 고양점',
+    address: '경기도 고양시 일산동구 중앙로 789',
+    detailAddress: '1층',
+    phone: '031-3456-7890',
+    kakaoChannel: 'https://pf.kakao.com/_example13'
   },
   {
     id: 14,
-    district: '서울강북',
-    type: '금매매소',
-    name: '용산전자상가 금은방',
-    address: '서울 용산구 한강대로 23길 55, 용산전자상가 3층',
-    phone: '02-792-4444',
-    category: '귀금속',
-    hours: '평일 09:00-18:00'
+    district: '인천',
+    name: '진정성금은 인천점',
+    address: '인천광역시 남동구 구월로 123',
+    detailAddress: '3층',
+    phone: '032-1234-5678',
+    kakaoChannel: 'https://pf.kakao.com/_example14'
+  },
+  {
+    id: 15,
+    district: '부산',
+    name: '진정성금은 부산점',
+    address: '부산광역시 해운대구 해운대로 456',
+    detailAddress: '1층',
+    phone: '051-1234-5678',
+    kakaoChannel: 'https://pf.kakao.com/_example15'
   }
 ])
 
@@ -265,11 +275,24 @@ const filteredLocations = computed(() => {
   
   // 검색어 필터 적용
   if (searchQuery.value) {
-    filtered = filtered.filter(location => 
-      location.name.includes(searchQuery.value) || 
-      location.address.includes(searchQuery.value) ||
-      location.district.includes(searchQuery.value)
-    )
+    filtered = filtered.filter(location => {
+      const query = searchQuery.value.toLowerCase()
+      switch (searchFilter.value) {
+        case '협력점명':
+          return location.name.toLowerCase().includes(query)
+        case '주소':
+          return location.address.toLowerCase().includes(query) ||
+                 (location.detailAddress && location.detailAddress.toLowerCase().includes(query))
+        case '전화번호':
+          return location.phone.includes(query)
+        default:
+          return location.name.toLowerCase().includes(query) || 
+                 location.address.toLowerCase().includes(query) ||
+                 location.district.toLowerCase().includes(query) ||
+                 (location.detailAddress && location.detailAddress.toLowerCase().includes(query)) ||
+                 location.phone.includes(query)
+      }
+    })
   }
   
   return filtered
@@ -279,15 +302,19 @@ const selectRegion = (regionValue) => {
   selectedRegion.value = regionValue
 }
 
-const searchLocations = () => {
-  let sel = document.querySelector("select[name=searchFilter]")
-  const selectedFilter = sel.options[sel.selectedIndex].value;  
-  console.log('검색:', selectedFilter, searchQuery.value)
+
+
+// 카카오톡 채널 열기
+const openKakaoChannel = (channelUrl) => {
+  window.open(channelUrl, '_blank')
 }
 
+// 카카오맵 열기 (상세주소 포함)
 const showMap = (location) => {
-  console.log('지도 보기:', location.name)
-  // 여기에 지도 표시 로직 추가
+  // 상세주소가 있으면 기본 주소와 함께 검색
+  const fullAddress = location.address + (location.detailAddress ? ' ' + location.detailAddress : '')
+  const kakaoMapUrl = `https://map.kakao.com/link/search/${encodeURIComponent(fullAddress)}`
+  window.open(kakaoMapUrl, '_blank')
 }
 
 const contactPartnership = () => {
@@ -351,20 +378,7 @@ const contactPartnership = () => {
   font-size: 0.9rem;
   min-width: 100px;
 }
-.search-button {
-  padding: 0.75rem 1.5rem;
-  background: #666;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  white-space: nowrap;
-  transition: background-color 0.2s ease;
-}
-.search-button:hover {
-  background: #555;
-}
+
 
 /*지역 버튼 그리드 */
 .region-buttons {
@@ -424,6 +438,7 @@ const contactPartnership = () => {
   border-collapse: collapse;
   font-size: 0.9rem;
   table-layout: fixed;
+  text-align: center;
 }
 
 .locations-table th:nth-child(1) { width: 8%; }    /* 지역 */
@@ -457,19 +472,52 @@ const contactPartnership = () => {
 .location-name {
   font-weight: 500;
   color: #333;
-  text-align: left !important;
 }
 
 .address {
-  text-align: left !important;
   max-width: 300px;
   word-break: break-all;
   line-height: 1.3;
 }
 
+.detail-address {
+  display: inline;
+  font-size: 0.8rem;
+  color: #666;
+  margin-left: 0.25rem;
+  font-weight: normal;
+}
+
 .phone {
   color: #666;
   font-family: monospace;
+}
+
+/* PC에서는 텍스트만 보이고 버튼은 숨김 */
+.phone-text {
+  display: inline;
+}
+
+.phone-button {
+  display: none;
+  background: #007bff;
+  color: white;
+  text-decoration: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  font-family: monospace;
+}
+
+.phone-button:hover {
+  background: #0056b3;
+}
+
+.no-channel {
+  color: #999;
+  font-size: 0.9rem;
 }
 
 /* 톡상담 버튼 스타일 */
@@ -609,7 +657,7 @@ const contactPartnership = () => {
     min-width: 100px;
   }
   
-  .search-button, .search-filter {
+  .search-filter {
     font-size: 0.75rem; 
     padding: 0.5rem 0.8rem;
   }
@@ -631,6 +679,22 @@ const contactPartnership = () => {
   
   .address {
     max-width: none;
+  }
+
+  .detail-address {
+    font-size: 0.7rem;
+    margin-left: 0.2rem;
+  }
+
+  /* 모바일에서는 텍스트 숨기고 버튼만 보임 */
+  .phone-text {
+    display: none;
+  }
+
+  .phone-button {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
   }
 
   .talk-button {
