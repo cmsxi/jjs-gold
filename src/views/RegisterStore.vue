@@ -659,7 +659,7 @@ const loadLocations = async () => {
         error.value = ''
         
         // 모든 지점 데이터를 한 번에 가져오기
-        const response = await jinjungsungService.getRegisterStoreLocations()
+        const response = await jinjungsungService.getLocations()
         allLocations.value = response.locations || response || []
         
         // 체크박스 선택 초기화

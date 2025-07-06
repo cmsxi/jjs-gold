@@ -225,7 +225,9 @@ const loadLocations = async () => {
     
     // 모든 활성 지점 데이터를 한 번에 가져오기
     const response = await jinjungsungService.getPublicLocations()
+    console.log('LocationFinder - API 응답:', response)
     allLocations.value = response.locations || response || []
+    console.log('LocationFinder - 설정된 allLocations:', allLocations.value)
     
   } catch (err) {
     console.error('지점 데이터 로드 실패:', err)
@@ -295,6 +297,7 @@ const totalPages = computed(() => {
 })
 
 const totalCount = computed(() => {
+  console.log('LocationFinder - totalCount 계산:', sortedLocations.value.length)
   return sortedLocations.value.length
 })
 
