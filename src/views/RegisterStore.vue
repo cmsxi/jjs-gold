@@ -887,7 +887,12 @@ const deleteSelectedLocations = async () => {
 // 카카오톡 채널 열기
 const openKakaoChannel = (channelUrl) => {
     if (channelUrl) {
-        window.open(channelUrl, '_blank')
+        // URL에 프로토콜이 없으면 https:// 추가
+        let url = channelUrl
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url
+        }
+        window.open(url, '_blank')
     }
 }
 
