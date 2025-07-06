@@ -311,14 +311,13 @@ const currentPriceData = computed(() => {
   // 카테고리별 필터링
   if (selectedCategory.value === 'gold') {
     return allPrices.filter(price => 
-      price.name.includes('금') || price.name.includes('24K') || price.name.includes('18K') || price.name.includes('14K')
+      price.name.includes('24K') || price.name.includes('18K') || price.name.includes('14K')
     )
   } else if (selectedCategory.value === 'silver') {
     return allPrices.filter(price => price.name.includes('은'))
   } else if (selectedCategory.value === 'platinum') {
     return allPrices.filter(price => price.name.includes('백금') || price.name.includes('Pt'))
   } else {
-    // 'all' 카테고리에서는 금과 은만 표시 (백금 제외)
     return allPrices.filter(price => 
       price.name.includes('금') || price.name.includes('24K') || price.name.includes('18K') || price.name.includes('14K') || price.name.includes('은')
     )
