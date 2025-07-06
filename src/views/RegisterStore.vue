@@ -135,8 +135,9 @@
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">전화번호 *</label>
                         <input id="phone" v-model="formData.phone" type="tel" required
                                @input="handlePhoneInput"
-                               placeholder="010-1234-5678"
+                               placeholder="전화번호 (예: 02-1234-5678, 010-1234-5678)"
                          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400" />
+                        <p class="text-xs text-gray-500 mt-1">지역번호(02, 031 등), 휴대폰(010), 인터넷전화(070) 모두 입력 가능</p>
                     </div>
                     <div>
                         <label for="kakaoChannel" class="block text-sm font-medium text-gray-700 mb-1">카카오톡 채널 링크</label>
@@ -574,20 +575,82 @@ watch(() => formData.value.address, (newAddress) => {
     }
 })
 
-// 전화번호 입력 처리
+// 전화번호 입력 처리 (지역번호 포함)
 const handlePhoneInput = (event) => {
     let value = event.target.value.replace(/[^\d\-\s]/g, '')
-    value = value.replace(/[^\d]/g, '')
+    value = value.replace(/[^\d]/g, '') // 숫자만 남기기
     
-    if (value.length >= 3) {
-        if (value.length <= 7) {
-            value = value.slice(0, 3) + '-' + value.slice(3)
-        } else {
-            value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11)
-        }
+    if (value.length <= 3) {
+        // 3자리 이하일 때는 그대로
+        formData.value.phone = value
+        return
     }
     
-    formData.value.phone = value
+    // 02로 시작하는 서울 지역번호 (02-1234-5678)
+    if (value.startsWith('02')) {
+        if (value.length <= 2) {
+            formData.value.phone = value
+        } else if (value.length <= 6) {
+            formData.value.phone = value.slice(0, 2) + '-' + value.slice(2)
+        } else {
+            formData.value.phone = value.slice(0, 2) + '-' + value.slice(2, 6) + '-' + value.slice(6, 10)
+        }
+    }
+    // 010, 011, 016, 017, 018, 019 휴대폰 번호 (010-1234-5678)
+    else if (value.startsWith('010') || value.startsWith('011') || value.startsWith('016') || 
+             value.startsWith('017') || value.startsWith('018') || value.startsWith('019')) {
+        if (value.length <= 3) {
+            formData.value.phone = value
+        } else if (value.length <= 7) {
+            formData.value.phone = value.slice(0, 3) + '-' + value.slice(3)
+        } else {
+            formData.value.phone = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11)
+        }
+    }
+    // 070 인터넷전화 (070-1234-5678)
+    else if (value.startsWith('070')) {
+        if (value.length <= 3) {
+            formData.value.phone = value
+        } else if (value.length <= 7) {
+            formData.value.phone = value.slice(0, 3) + '-' + value.slice(3)
+        } else {
+            formData.value.phone = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11)
+        }
+    }
+    // 031, 032, 041, 042, 043, 044, 051, 052, 053, 054, 055, 061, 062, 063, 064 지역번호 (031-123-4567)
+    else if (value.startsWith('031') || value.startsWith('032') || value.startsWith('041') || 
+             value.startsWith('042') || value.startsWith('043') || value.startsWith('044') ||
+             value.startsWith('051') || value.startsWith('052') || value.startsWith('053') || 
+             value.startsWith('054') || value.startsWith('055') || value.startsWith('061') || 
+             value.startsWith('062') || value.startsWith('063') || value.startsWith('064')) {
+        if (value.length <= 3) {
+            formData.value.phone = value
+        } else if (value.length <= 6) {
+            formData.value.phone = value.slice(0, 3) + '-' + value.slice(3)
+        } else {
+            formData.value.phone = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6, 10)
+        }
+    }
+    // 080 무료전화 (080-123-4567)
+    else if (value.startsWith('080')) {
+        if (value.length <= 3) {
+            formData.value.phone = value
+        } else if (value.length <= 6) {
+            formData.value.phone = value.slice(0, 3) + '-' + value.slice(3)
+        } else {
+            formData.value.phone = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6, 10)
+        }
+    }
+    // 기타 번호 (기본 3-4-4 포맷)
+    else {
+        if (value.length <= 3) {
+            formData.value.phone = value
+        } else if (value.length <= 7) {
+            formData.value.phone = value.slice(0, 3) + '-' + value.slice(3)
+        } else {
+            formData.value.phone = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11)
+        }
+    }
 }
 
 // 지점 데이터 로드
@@ -626,12 +689,41 @@ const loadLocations = async () => {
     }
 }
 
+// 전화번호 유효성 검증
+const validatePhoneNumber = (phone) => {
+    // 하이픈 제거하고 숫자만 추출
+    const cleanPhone = phone.replace(/[^\d]/g, '')
+    
+    // 길이 검사
+    if (cleanPhone.length < 8 || cleanPhone.length > 11) {
+        return false
+    }
+    
+    // 번호 패턴 검사
+    const patterns = [
+        /^02\d{7,8}$/,          // 서울 지역번호 (02-1234-5678)
+        /^0[3-6][1-4]\d{6,7}$/, // 지역번호 (031-123-4567)
+        /^01[0-9]\d{7,8}$/,     // 휴대폰 (010-1234-5678)
+        /^070\d{7,8}$/,         // 인터넷전화 (070-1234-5678)
+        /^080\d{6,7}$/,         // 무료전화 (080-123-4567)
+        /^1[5-9]\d{2,3}$/       // 특수번호 (1588, 1577 등)
+    ]
+    
+    return patterns.some(pattern => pattern.test(cleanPhone))
+}
+
 // 지점 등록
 const registerStore = async () => {
     try {
         // 필수 필드 검증
         if (!formData.value.name || !formData.value.address || !formData.value.phone) {
             alert('필수 항목(협력점명, 주소, 전화번호)을 모두 입력해주세요.')
+            return
+        }
+        
+        // 전화번호 형식 검증
+        if (!validatePhoneNumber(formData.value.phone)) {
+            alert('올바른 전화번호 형식을 입력해주세요.\n(예: 02-1234-5678, 010-1234-5678, 031-123-4567)')
             return
         }
         
