@@ -761,9 +761,72 @@ const showKakaoMap = (location) => {
     window.open(mapUrl, '_blank')
 }
 
-// 주소 찾기 (예시)
+// 주소 찾기 (카카오맵 주소 검색)
 const searchAddress = () => {
-    alert('주소 찾기 기능은 추후 구현될 예정입니다.')
+    // 다음 주소 검색 API 스크립트 동적 로드
+    const loadDaumScript = () => {
+        return new Promise((resolve) => {
+            // 이미 로드된 경우
+            if (window.daum && window.daum.Postcode) {
+                resolve()
+                return
+            }
+            
+            // 스크립트 로드
+            const script = document.createElement('script')
+            script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
+            script.onload = resolve
+            document.head.appendChild(script)
+        })
+    }
+    
+    loadDaumScript().then(() => {
+        new window.daum.Postcode({
+            oncomplete: function(data) {
+                // 선택된 주소 정보 처리
+                let fullAddress = ''
+                
+                // 도로명 주소 우선, 없으면 지번 주소 사용
+                if (data.roadAddress) {
+                    fullAddress = data.roadAddress
+                } else {
+                    fullAddress = data.jibunAddress
+                }
+                
+                // 건물명이 있으면 추가
+                if (data.buildingName) {
+                    fullAddress += ` (${data.buildingName})`
+                }
+                
+                // 주소 입력 필드에 설정
+                formData.value.address = fullAddress
+                
+                // 상세주소 입력 필드에 포커스
+                setTimeout(() => {
+                    const detailAddressInput = document.getElementById('detailAddress')
+                    if (detailAddressInput) {
+                        detailAddressInput.focus()
+                    }
+                }, 100)
+                
+                console.log('주소 검색 완료:', {
+                    address: fullAddress,
+                    zonecode: data.zonecode,
+                    region: extractRegionFromAddress(fullAddress)
+                })
+            },
+            onclose: function(state) {
+                console.log('주소 검색 창 닫힘:', state)
+            }
+        }).open({
+            left: (window.screen.width / 2) - (400 / 2),
+            top: (window.screen.height / 2) - (500 / 2),
+            popupTitle: '주소 검색'
+        })
+    }).catch(error => {
+        console.error('주소 검색 API 로드 실패:', error)
+        alert('주소 검색 기능을 불러오는 중 오류가 발생했습니다.')
+    })
 }
 
 // 인증 관련 메서드들
