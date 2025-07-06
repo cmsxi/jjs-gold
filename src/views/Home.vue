@@ -5,7 +5,7 @@
       <!-- 그라데이션 배경 -->
       <div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800"></div>
       <!-- 배경 이미지 오버레이 -->
-      <div class="absolute inset-0 w-full h-full bg-cover bg-center opacity-[0.25] mix-blend-soft-light" style="background-image: url('./src/assets/images/main-banner.jpg');"></div>
+      <div class="absolute inset-0 w-full h-full bg-cover bg-center opacity-[0.25] mix-blend-soft-light" :style="{ backgroundImage: `url(${mainBannerImg})` }"></div>
       <!-- 그라데이션 오버레이 -->
       <div class="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-gray-600/20"></div>
       
@@ -271,20 +271,22 @@ import CountUp from '@/components/CountUp.vue'
 import { jinjungsungService } from '@/services/jinjungsungService.js'
 import logoWhite from '@/assets/images/logo-white.png'
 import consIcon from '@/assets/images/cons.png'
+import deliveryIcon from '@/assets/images/delivery.png'
 import maniIcon from '@/assets/images/mani.png'
 import messIcon from '@/assets/images/mess.png'
 import paymentIcon from '@/assets/images/payment.png'
+import mainBannerImg from '@/assets/images/main-banner.jpg'
 
 // 오늘 날짜 (한국 기준)
 const today = ref('')
 
 // 시세 데이터 (API로부터)
 const prices = ref([
-  { type: 'gold24k', label: '금 24K', price: 542000, change: 0 },
-  { type: 'gold18k', label: '금 18K', price: 398400, change: 0 },
-  { type: 'gold14k', label: '금 14K', price: 309000, change: 0 },
-  { type: 'silver', label: '은', price: 5660, change: 0 },
-  { type: 'platinum', label: '백금(Pt)', price: 216000, change: 0 },
+  { type: 'gold24k', label: '금 24K', price: 542000, change: 0.0 },
+  { type: 'gold18k', label: '금 18K', price: 398400, change: 0.0 },
+  { type: 'gold14k', label: '금 14K', price: 309000, change: 0.0 },
+  { type: 'silver', label: '은', price: 5660, change: 0.71 },
+  { type: 'platinum', label: '백금(Pt)', price: 216000, change: -0.92 },
 ])
 
 // 로딩 상태
@@ -378,100 +380,36 @@ const loadPrices = async () => {
   pricesError.value = ''
   
   try {
-    // 먼저 realtime-prices API 시도
-    let response
-    try {
-      response = await jinjungsungService.getRealtimePrices('gold')
-      console.log('Realtime API 응답:', response)
-    } catch (realtimeError) {
-      console.log('Realtime API 실패, today-prices 시도:', realtimeError)
-      response = await jinjungsungService.getTodayPrices()
-      console.log('Today API 응답:', response)
-    }
+    // today-prices API 직접 호출
+    const response = await jinjungsungService.getTodayPrices()
+    console.log('Today API 응답:', response)
     
     // 응답 데이터 구조 확인
     console.log('API 응답 전체:', response)
     console.log('응답 데이터 keys:', Object.keys(response || {}))
     
-    // 다양한 응답 구조에 대응
-    let apiData = response?.data || response
-    let pricesData = apiData?.prices || apiData?.metals || apiData
+    // API 응답 데이터 추출
+    const apiData = response?.data || response
+    const pricesData = apiData?.prices
     
     console.log('추출된 가격 데이터:', pricesData)
     
-    if (pricesData && (Array.isArray(pricesData) || typeof pricesData === 'object')) {
+    if (pricesData && Array.isArray(pricesData)) {
       const updatedPrices = []
       
       // 배열 형태의 응답 처리
-      if (Array.isArray(pricesData)) {
-        pricesData.forEach(priceInfo => {
-          console.log('가격 정보:', priceInfo)
-          // 실제 API 응답의 type 필드를 직접 사용
-          if (priceInfo.type && ['gold24k', 'gold18k', 'gold14k', 'silver', 'platinum'].includes(priceInfo.type)) {
-            updatedPrices.push({
-              type: priceInfo.type,
-              label: priceInfo.label || priceInfo.name || '알 수 없음',
-              price: priceInfo.price || 0,
-              change: priceInfo.change || 0
-            })
-          }
-        })
-      } 
-      // 객체 형태의 응답 처리 (metals 데이터)
-      else if (typeof pricesData === 'object') {
-        console.log('객체 형태 데이터 처리:', pricesData)
-        
-        // ppure = 24K 금, p18k = 18K 금, p14k = 14K 금, psilver = 은, pwhite = 백금
-        if (pricesData.ppure) {
-          const latestPure = Array.isArray(pricesData.ppure) ? pricesData.ppure[pricesData.ppure.length - 1] : pricesData.ppure
+      pricesData.forEach(priceInfo => {
+        console.log('가격 정보:', priceInfo)
+        // 실제 API 응답의 type 필드를 직접 사용
+        if (priceInfo.type && ['gold24k', 'gold18k', 'gold14k', 'silver', 'platinum'].includes(priceInfo.type)) {
           updatedPrices.push({
-            type: 'gold24k',
-            label: '금 24K',
-            price: latestPure.price || latestPure || 542000,
-            change: 0
+            type: priceInfo.type,
+            label: priceInfo.label || priceInfo.name || '알 수 없음',
+            price: priceInfo.price || 0,
+            change: priceInfo.change || 0
           })
         }
-        
-        if (pricesData.p18k) {
-          const latest18k = Array.isArray(pricesData.p18k) ? pricesData.p18k[pricesData.p18k.length - 1] : pricesData.p18k
-          updatedPrices.push({
-            type: 'gold18k',
-            label: '금 18K',
-            price: latest18k.price || latest18k || 398400,
-            change: 0
-          })
-        }
-        
-        if (pricesData.p14k) {
-          const latest14k = Array.isArray(pricesData.p14k) ? pricesData.p14k[pricesData.p14k.length - 1] : pricesData.p14k
-          updatedPrices.push({
-            type: 'gold14k',
-            label: '금 14K',
-            price: latest14k.price || latest14k || 309000,
-            change: 0
-          })
-        }
-        
-        if (pricesData.psilver) {
-          const latestSilver = Array.isArray(pricesData.psilver) ? pricesData.psilver[pricesData.psilver.length - 1] : pricesData.psilver
-          updatedPrices.push({
-            type: 'silver',
-            label: '은',
-            price: latestSilver.price || latestSilver || 5660,
-            change: 0
-          })
-        }
-        
-        if (pricesData.pwhite) {
-          const latestWhite = Array.isArray(pricesData.pwhite) ? pricesData.pwhite[pricesData.pwhite.length - 1] : pricesData.pwhite
-          updatedPrices.push({
-            type: 'platinum',
-            label: '백금(Pt)',
-            price: latestWhite.price || latestWhite || 216000,
-            change: 0
-          })
-        }
-      }
+      })
       
       console.log('파싱된 가격 데이터:', updatedPrices)
       
@@ -488,8 +426,8 @@ const loadPrices = async () => {
       }
       
       // API에서 today_date를 제공하면 사용
-      if (apiData?.today_date || apiData?.fetchedAt) {
-        today.value = apiData.today_date || apiData.fetchedAt
+      if (apiData?.today_date) {
+        today.value = apiData.today_date
       }
     }
     

@@ -255,18 +255,18 @@ const realtimePricesData = ref(null)
 // 오늘의 시세 데이터 (API로부터)
 const todayPrices = computed(() => {
   if (!todayPricesData.value?.data?.prices) {
-    // 기본 더미 데이터
+    // 기본 더미 데이터 (업데이트된 시세 반영)
     return [
-      { name: '금 24K', price: 870200, change: 0 },
-      { name: '금 18K', price: 654000, change: 0 },
-      { name: '금 14K', price: 512000, change: 0 },
-      { name: '은', price: 1100, change: 0 },
-      { name: '백금', price: 432000, change: 0 }
+      { name: '금 24K', price: 542000, change: 0.0 },
+      { name: '금 18K', price: 398400, change: 0.0 },
+      { name: '금 14K', price: 309000, change: 0.0 },
+      { name: '은', price: 5660, change: 0.71 },
+      { name: '백금(Pt)', price: 216000, change: -0.92 }
     ]
   }
   
   return todayPricesData.value.data.prices.map(price => ({
-    name: price.name,
+    name: price.label || price.name || '알 수 없음',
     price: price.price || 0,
     change: price.change || 0
   }))
@@ -275,37 +275,52 @@ const todayPrices = computed(() => {
 // 실시간 시세 데이터 (차트 옆에 표시)
 const currentPriceData = computed(() => {
   if (!realtimePricesData.value?.data?.prices) {
-    // 기본 더미 데이터
+    // 기본 더미 데이터 (업데이트된 시세 반영)
     if (selectedCategory.value === 'gold') {
       return [
-        { name: '금 24K', price: 870200, change: 1.2, unit: '1g' },
-        { name: '금 18K', price: 654000, change: 0.8, unit: '1g' },
-        { name: '금 14K', price: 512000, change: -0.3, unit: '1g' }
+        { name: '금 24K', price: 542000, change: 0.0, unit: '1g' },
+        { name: '금 18K', price: 398400, change: 0.0, unit: '1g' },
+        { name: '금 14K', price: 309000, change: 0.0, unit: '1g' }
       ]
     } else if (selectedCategory.value === 'silver') {
       return [
-        { name: '은', price: 1100, change: 2.1, unit: '1g' }
+        { name: '은', price: 5660, change: 0.71, unit: '1g' }
       ]
     } else if (selectedCategory.value === 'platinum') {
       return [
-        { name: '백금', price: 432000, change: -1.5, unit: '1g' }
+        { name: '백금(Pt)', price: 216000, change: -0.92, unit: '1g' }
       ]
     } else {
       return [
-        { name: '금 24K', price: 870200, change: 1.2, unit: '1g' },
-        { name: '금 18K', price: 654000, change: 0.8, unit: '1g' },
-        { name: '은', price: 1100, change: 2.1, unit: '1g' },
-        { name: '백금', price: 432000, change: -1.5, unit: '1g' }
+        { name: '금 24K', price: 542000, change: 0.0, unit: '1g' },
+        { name: '금 18K', price: 398400, change: 0.0, unit: '1g' },
+        { name: '금 14K', price: 309000, change: 0.0, unit: '1g' },
+        { name: '은', price: 5660, change: 0.71, unit: '1g' },
+        { name: '백금(Pt)', price: 216000, change: -0.92, unit: '1g' }
       ]
     }
   }
 
-  return realtimePricesData.value.data.prices.map(price => ({
-    name: price.name,
+  // API 데이터가 있으면 카테고리별로 필터링
+  const allPrices = realtimePricesData.value.data.prices.map(price => ({
+    name: price.label || price.name || '알 수 없음',
     price: price.price || 0,
     change: price.change || 0,
     unit: price.unit || '1g'
   }))
+
+  // 카테고리별 필터링
+  if (selectedCategory.value === 'gold') {
+    return allPrices.filter(price => 
+      price.name.includes('금') || price.name.includes('24K') || price.name.includes('18K') || price.name.includes('14K')
+    )
+  } else if (selectedCategory.value === 'silver') {
+    return allPrices.filter(price => price.name.includes('은'))
+  } else if (selectedCategory.value === 'platinum') {
+    return allPrices.filter(price => price.name.includes('백금') || price.name.includes('Pt'))
+  } else {
+    return allPrices
+  }
 })
 
 // 마지막 업데이트 시간
@@ -360,12 +375,13 @@ const loadChartData = async () => {
 
 const loadRealtimePrices = async () => {
   try {
-    const response = await jinjungsungService.getRealtimePrices(selectedCategory.value)
+    // today-prices API를 사용하여 실시간 시세 로드
+    const response = await jinjungsungService.getTodayPrices()
     realtimePricesData.value = response
     
     // 업데이트 시간 설정
-    if (response.data?.last_update) {
-      const updateDate = new Date(response.data.last_update)
+    if (response.data?.update_time) {
+      const updateDate = new Date(response.data.update_time)
       lastUpdateTime.value = updateDate.toLocaleString('ko-KR', {
         year: 'numeric',
         month: '2-digit',
@@ -461,21 +477,21 @@ const chartData = computed(() => {
     datasets.push(
       {
         label: '금 24K',
-        data: generatePriceData(870000),
+        data: generatePriceData(542000),
         borderColor: '#FFD700',
         backgroundColor: 'rgba(255, 215, 0, 0.1)',
         tension: 0.4
       },
       {
         label: '금 18K',
-        data: generatePriceData(654000),
+        data: generatePriceData(398400),
         borderColor: '#FFA500',
         backgroundColor: 'rgba(255, 165, 0, 0.1)',
         tension: 0.4
       },
       {
         label: '금 14K',
-        data: generatePriceData(512000),
+        data: generatePriceData(309000),
         borderColor: '#DAA520',
         backgroundColor: 'rgba(218, 165, 32, 0.1)',
         tension: 0.4
@@ -486,7 +502,7 @@ const chartData = computed(() => {
   if (selectedCategory.value === 'silver' || selectedCategory.value === 'all') {
     datasets.push({
       label: '은',
-      data: generatePriceData(1100),
+      data: generatePriceData(5660),
       borderColor: '#C0C0C0',
       backgroundColor: 'rgba(192, 192, 192, 0.1)',
       tension: 0.4
@@ -496,7 +512,7 @@ const chartData = computed(() => {
   if (selectedCategory.value === 'platinum' || selectedCategory.value === 'all') {
     datasets.push({
       label: '백금',
-      data: generatePriceData(432000),
+      data: generatePriceData(216000),
       borderColor: '#E5E4E2',
       backgroundColor: 'rgba(229, 228, 226, 0.1)',
       tension: 0.4
