@@ -188,9 +188,8 @@ let searchTimer = null
 // 지역 목록
 const regions = ref([
   { value: '', label: '전체' },
-  { value: '본점', label: '본점' },
+  { value: '서울북부', label: '서울북부' },
   { value: '서울강남', label: '서울강남' },
-  { value: '서울강북', label: '서울강북' },
   { value: '경기남부', label: '경기남부' },
   { value: '경기북부', label: '경기북부' },
   { value: '인천', label: '인천' },
