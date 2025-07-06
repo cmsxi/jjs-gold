@@ -30,7 +30,10 @@ export const jinjungsungService = {
   async getLocations(params = {}) {
     try {
       const response = await api.get('/locations')
-      return response.data
+      // 백엔드 응답 구조: {"status":"success","data":[]}
+      return {
+        locations: response.data?.data || []
+      }
     } catch (error) {
       console.error('지점 목록 조회 오류:', error)
       throw new Error(error.response?.data?.detail || '지점 목록을 불러오는 중 오류가 발생했습니다.')
@@ -159,11 +162,15 @@ export const jinjungsungService = {
   // ========================================
 
   /**
+   * 공개 지점 목록 조회 (LocationFinder 페이지용)
    */
   async getPublicLocations() {
     try {
       const response = await api.get('/locations')
-      return response.data
+      // 백엔드 응답 구조: {"status":"success","data":[]}
+      return {
+        locations: response.data?.data || []
+      }
     } catch (error) {
       console.error('공개 지점 목록 조회 오류:', error)
       throw new Error(error.response?.data?.detail || '지점 목록을 불러오는 중 오류가 발생했습니다.')
