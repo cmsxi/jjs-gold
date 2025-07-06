@@ -29,7 +29,7 @@ export const jinjungsungService = {
    */
   async registerLocation(locationData) {
     try {
-      const response = await api.post('/register-store/locations', locationData)
+      const response = await api.post('/locations/register', locationData)
       return response.data
     } catch (error) {
       console.error('지점 등록 오류:', error)
@@ -47,7 +47,7 @@ export const jinjungsungService = {
         throw new Error('삭제할 지점을 선택해주세요.')
       }
 
-      const response = await api.post('/register-store/locations/batch', locationIds)
+      const response = await api.post('/locations/delete', locationIds)
       return response.data
     } catch (error) {
       console.error('선택 지점 삭제 오류:', error)
