@@ -159,12 +159,6 @@
               </div>
             </div>
             
-            <!-- 마지막 업데이트 시간 -->
-            <div class="mt-4 pt-3 border-t border-gray-300">
-              <div class="text-xs text-gray-600 text-center">
-                마지막 업데이트: {{ lastUpdateTime }}
-              </div>
-            </div>
           </div>
         </div>
       </div>
