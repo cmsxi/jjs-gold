@@ -78,8 +78,8 @@
                   <td class="address">
                     <div>
                       {{ location.address }}
-                      <span v-if="location.detailAddress" class="detail-address">
-                        ({{ location.detailAddress }})
+                      <span v-if="location.detail_address" class="detail-address">
+                        ({{ location.detail_address }})
                       </span>
                     </div>
                   </td>
@@ -92,7 +92,7 @@
                     </a>
                   </td>
                   <td> 
-                    <button v-if="location.kakaoChannel" @click="openKakaoChannel(location.kakaoChannel)" class="talk-button">
+                    <button v-if="location.kakao_channel" @click="openKakaoChannel(location.kakao_channel)" class="talk-button">
                       <span class="talk-text">톡채널</span> 
                     </button>
                     <span v-else class="no-channel">-</span>
@@ -248,7 +248,7 @@ const filteredLocations = computed(() => {
         return location.name?.toLowerCase().includes(query)
       } else if (searchFilter.value === '주소') {
         return location.address?.toLowerCase().includes(query) || 
-               location.detailAddress?.toLowerCase().includes(query)
+               location.detail_address?.toLowerCase().includes(query)
       } else if (searchFilter.value === '전화번호') {
         return location.phone?.includes(query)
       }
@@ -354,7 +354,7 @@ const openKakaoChannel = (channelUrl) => {
 
 // 카카오맵 열기
 const showMap = (location) => {
-  const address = location.address + (location.detailAddress ? ` ${location.detailAddress}` : '')
+  const address = location.address + (location.detail_address ? ` ${location.detail_address}` : '')
   const mapUrl = `https://map.kakao.com/link/search/${encodeURIComponent(address)}`
   window.open(mapUrl, '_blank')
 }
