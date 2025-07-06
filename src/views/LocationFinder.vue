@@ -16,6 +16,7 @@
                 v-model="searchQuery"
                 placeholder="검색어 입력"
                 class="search-input"
+                @input="handleSearchInput"
               />
             </div>
             <div class="region-buttons">
@@ -31,9 +32,34 @@
           </div>
         </div>
         
-        <div class="table-section">
+        <!-- 로딩 상태 -->
+        <div v-if="loading" class="loading-section">
+          <div class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <p class="mt-4 text-gray-600">지점 정보를 불러오는 중...</p>
+          </div>
+        </div>
+        
+        <!-- 오류 상태 -->
+        <div v-else-if="error" class="error-section">
+          <div class="text-center py-12">
+            <div class="text-red-600 mb-4">
+              <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">데이터 로드 실패</h3>
+            <p class="text-gray-600 mb-4">{{ error }}</p>
+            <button @click="loadLocations" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">
+              다시 시도
+            </button>
+          </div>
+        </div>
+        
+        <div v-else class="table-section">
           <h2 class="section-title">검색결과</h2>
-          <div class="table-container" v-if="filteredLocations.length > 0">
+          <div class="table-container" v-if="locations.length > 0">
             <table class="locations-table">
               <thead>
                 <tr>
@@ -46,7 +72,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="location in filteredLocations" :key="location.id">
+                <tr v-for="location in locations" :key="location.id">
                   <td>{{ location.district }}</td>
                   <td class="location-name">{{ location.name }}</td>
                   <td class="address">
@@ -95,12 +121,23 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { jinjungsungService } from '@/services/jinjungsungService.js'
 
+const router = useRouter()
+
+// 반응형 변수들
 const searchQuery = ref('')
 const selectedRegion = ref('')
 const searchFilter = ref('협력점명')
+const loading = ref(false)
+const error = ref('')
 
+// 검색 입력 디바운스용 타이머
+let searchTimer = null
+
+// 지역 목록
 const regions = ref([
   { value: '', label: '전체' },
   { value: '본점', label: '본점' },
@@ -125,547 +162,336 @@ const regions = ref([
   { value: '제주', label: '제주' },
 ])
 
-const locations = ref([
-  {
-    id: 1,
-    district: '본점',
-    name: '진정성금은 본점',
-    address: '서울특별시 강남구 테헤란로 123',
-    detailAddress: '10층 1001호',
-    phone: '02-1234-5678',
-    kakaoChannel: 'https://pf.kakao.com/_example1'
-  },
-  {
-    id: 2,
-    district: '서울강남',
-    name: '진정성금은 강남점',
-    address: '서울특별시 강남구 역삼동 456',
-    detailAddress: '2층',
-    phone: '02-2345-6789',
-    kakaoChannel: 'https://pf.kakao.com/_example2'
-  },
-  {
-    id: 3,
-    district: '서울강남',
-    name: '진정성금은 테헤란점',
-    address: '서울특별시 강남구 테헤란로 789',
-    detailAddress: '1층',
-    phone: '02-3456-7890',
-    kakaoChannel: 'https://pf.kakao.com/_example3'
-  },
-  {
-    id: 4,
-    district: '서울강남',
-    name: '진정성금은 선릉점',
-    address: '서울특별시 강남구 선릉로 433',
-    detailAddress: '지하 1층',
-    phone: '02-4567-8901',
-    kakaoChannel: 'https://pf.kakao.com/_example4'
-  },
-  {
-    id: 5,
-    district: '서울강남',
-    name: '진정성금은 압구정점',
-    address: '서울특별시 강남구 압구정로 40',
-    detailAddress: '3층',
-    phone: '02-5678-9012',
-    kakaoChannel: 'https://pf.kakao.com/_example5'
-  },
-  {
-    id: 6,
-    district: '서울강남',
-    name: '진정성금은 잠실점',
-    address: '서울특별시 송파구 잠실대로 300',
-    detailAddress: 'B1층',
-    phone: '02-6789-0123',
-    kakaoChannel: 'https://pf.kakao.com/_example6'
-  },
-  {
-    id: 7,
-    district: '서울강북',
-    name: '진정성금은 홍대점',
-    address: '서울특별시 마포구 홍대로 240',
-    detailAddress: '2층',
-    phone: '02-7890-1234',
-    kakaoChannel: 'https://pf.kakao.com/_example7'
-  },
-  {
-    id: 8,
-    district: '서울강북',
-    name: '진정성금은 인사동점',
-    address: '서울특별시 종로구 인사동길 62',
-    detailAddress: '1층',
-    phone: '02-8901-2345',
-    kakaoChannel: 'https://pf.kakao.com/_example8'
-  },
-  {
-    id: 9,
-    district: '서울강북',
-    name: '진정성금은 명동점',
-    address: '서울특별시 중구 명동길 78',
-    detailAddress: '지하 1층',
-    phone: '02-9012-3456',
-    kakaoChannel: 'https://pf.kakao.com/_example9'
-  },
-  {
-    id: 10,
-    district: '서울강북',
-    name: '진정성금은 용산점',
-    address: '서울특별시 용산구 한강대로 23길 55',
-    detailAddress: '3층',
-    phone: '02-0123-4567',
-    kakaoChannel: 'https://pf.kakao.com/_example10'
-  },
-  {
-    id: 11,
-    district: '경기남부',
-    name: '진정성금은 수원점',
-    address: '경기도 수원시 영통구 중부대로 123',
-    detailAddress: '1층',
-    phone: '031-1234-5678',
-    kakaoChannel: 'https://pf.kakao.com/_example11'
-  },
-  {
-    id: 12,
-    district: '경기남부',
-    name: '진정성금은 성남점',
-    address: '경기도 성남시 분당구 판교로 456',
-    detailAddress: '2층',
-    phone: '031-2345-6789',
-    kakaoChannel: 'https://pf.kakao.com/_example12'
-  },
-  {
-    id: 13,
-    district: '경기북부',
-    name: '진정성금은 고양점',
-    address: '경기도 고양시 일산동구 중앙로 789',
-    detailAddress: '1층',
-    phone: '031-3456-7890',
-    kakaoChannel: 'https://pf.kakao.com/_example13'
-  },
-  {
-    id: 14,
-    district: '인천',
-    name: '진정성금은 인천점',
-    address: '인천광역시 남동구 구월로 123',
-    detailAddress: '3층',
-    phone: '032-1234-5678',
-    kakaoChannel: 'https://pf.kakao.com/_example14'
-  },
-  {
-    id: 15,
-    district: '부산',
-    name: '진정성금은 부산점',
-    address: '부산광역시 해운대구 해운대로 456',
-    detailAddress: '1층',
-    phone: '051-1234-5678',
-    kakaoChannel: 'https://pf.kakao.com/_example15'
-  }
-])
+// 지점 데이터
+const locations = ref([])
 
-const filteredLocations = computed(() => {
-  let filtered = locations.value
-  
-  // 지역 필터 적용
-  if (selectedRegion.value) {
-    filtered = filtered.filter(location => 
-      location.district.includes(selectedRegion.value)
-    )
+// 지점 데이터 로드
+const loadLocations = async () => {
+  try {
+    loading.value = true
+    error.value = ''
+    
+    const params = {
+      searchQuery: searchQuery.value,
+      searchFilter: searchFilter.value,
+      district: selectedRegion.value,
+      activeOnly: true
+    }
+    
+    const response = await jinjungsungService.getPublicLocations(params)
+    locations.value = response.locations || response || []
+    
+  } catch (err) {
+    console.error('지점 데이터 로드 실패:', err)
+    error.value = err.message || '지점 데이터를 불러오는 중 오류가 발생했습니다.'
+  } finally {
+    loading.value = false
   }
-  
-  // 검색어 필터 적용
-  if (searchQuery.value) {
-    filtered = filtered.filter(location => {
-      const query = searchQuery.value.toLowerCase()
-      switch (searchFilter.value) {
-        case '협력점명':
-          return location.name.toLowerCase().includes(query)
-        case '주소':
-          return location.address.toLowerCase().includes(query) ||
-                 (location.detailAddress && location.detailAddress.toLowerCase().includes(query))
-        case '전화번호':
-          return location.phone.includes(query)
-        default:
-          return location.name.toLowerCase().includes(query) || 
-                 location.address.toLowerCase().includes(query) ||
-                 location.district.toLowerCase().includes(query) ||
-                 (location.detailAddress && location.detailAddress.toLowerCase().includes(query)) ||
-                 location.phone.includes(query)
-      }
-    })
-  }
-  
-  return filtered
-})
-
-const selectRegion = (regionValue) => {
-  selectedRegion.value = regionValue
 }
 
+// 검색 입력 처리 (디바운스)
+const handleSearchInput = () => {
+  if (searchTimer) {
+    clearTimeout(searchTimer)
+  }
+  
+  searchTimer = setTimeout(() => {
+    loadLocations()
+  }, 300) // 300ms 딜레이
+}
 
+// 지역 선택
+const selectRegion = (regionValue) => {
+  selectedRegion.value = regionValue
+  loadLocations()
+}
 
 // 카카오톡 채널 열기
 const openKakaoChannel = (channelUrl) => {
-  window.open(channelUrl, '_blank')
-}
-
-// 카카오맵 열기 (상세주소 포함)
-const showMap = (location) => {
-  // 상세주소가 있으면 기본 주소와 함께 검색
-  const fullAddress = location.address + (location.detailAddress ? ' ' + location.detailAddress : '')
-  const kakaoMapUrl = `https://map.kakao.com/link/search/${encodeURIComponent(fullAddress)}`
-  window.open(kakaoMapUrl, '_blank')
-}
-
-const contactPartnership = () => {
-  // 협력점 문의하기 로직 추가
-  const confirmed = confirm('협력점 문의를 위해 고객센터로 연결하시겠습니까?\n\n📞 문의전화: 1588-0000\n📧 이메일: partnership@jjsgold.co.kr')
-  
-  if (confirmed) {
-    // 실제 환경에서는 전화 연결 또는 문의 페이지로 이동
-    window.open('tel:1588-0000')
+  if (channelUrl) {
+    window.open(channelUrl, '_blank')
   }
 }
+
+// 카카오맵 열기
+const showMap = (location) => {
+  const address = location.address + (location.detailAddress ? ` ${location.detailAddress}` : '')
+  const mapUrl = `https://map.kakao.com/link/search/${encodeURIComponent(address)}`
+  window.open(mapUrl, '_blank')
+}
+
+// 협력점 문의하기
+const contactPartnership = () => {
+  router.push('/partnership')
+}
+
+// 검색 필터 변경 감지
+watch(searchFilter, () => {
+  if (searchQuery.value) {
+    loadLocations()
+  }
+})
+
+// 컴포넌트 마운트 시 데이터 로드
+onMounted(() => {
+  loadLocations()
+})
 </script>
 
 <style scoped>
 .location-finder-page {
   min-height: 100vh;
-  background-color: #f8f9fa;
+  padding: 2rem 0;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
 .content {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
-/* 검색 섹션 */ 
 .search-section {
   background: white;
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .search-controls {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  align-items: center;
+  gap: 1.5rem;
 }
+
 .search-box {
   display: flex;
-  gap: 0.5rem;
-  width: 100%; 
-  max-width: 1000px;
-  justify-content: center;
+  gap: 1rem;
+  align-items: center;
 }
-.search-filter{
-  max-width: 120px; 
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px; 
-  font-size: 0.9rem;
+
+.search-filter {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   background: white;
+  font-size: 1rem;
+  min-width: 120px;
 }
+
 .search-input {
   flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  min-width: 100px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
 }
 
+.search-input:focus {
+  outline: none;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+}
 
-/*지역 버튼 그리드 */
 .region-buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 0.75rem;
-  width: 100%;
-  max-width: 1000px;
-  justify-items: center;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
 }
+
 .region-button {
   padding: 0.5rem 1rem;
-  background: #f8f9fa;
-  color: #666;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  font-size: 0.875rem;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  white-space: nowrap;
   transition: all 0.2s ease;
-  min-width: 100px;
-  text-align: center;
 }
+
 .region-button:hover {
-  background: #e9ecef;
-  border-color: #666;
+  background: #f3f4f6;
 }
+
 .region-button.active {
-  background: #666;
+  background: #374151;
   color: white;
-  border-color: #666;
+  border-color: #374151;
 }
 
-
-/*검색 결과 테이블*/
 .table-section {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
+
 .section-title {
-  background: #f8f9fa;
-  padding: 1rem 1.5rem;
-  margin: 0;
-  font-size: 1.1rem;
+  padding: 1.5rem 2rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #333;
-  border-bottom: 1px solid #eee;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
 }
+
 .table-container {
   overflow-x: auto;
 }
+
 .locations-table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  table-layout: fixed;
-  text-align: center;
+  font-size: 0.875rem;
 }
 
-.locations-table th:nth-child(1) { width: 8%; }    /* 지역 */
-.locations-table th:nth-child(2) { width: 18%; }   /* 협력점명 */
-.locations-table th:nth-child(3) { width: 35%; }   /* 주소 */
-.locations-table th:nth-child(4) { width: 13%; }   /* 전화번호 */
-.locations-table th:nth-child(5) { width: 13%; }    /* 문의하기 */
-.locations-table th:nth-child(6) { width: 13%; }   /* 약도보기 */
-
 .locations-table th {
-  background: #f8f9fa;
-  padding: 1rem 0.75rem;
+  background: #f9fafb;
+  padding: 1rem;
   text-align: center;
   font-weight: 600;
-  color: #555;
-  border-bottom: 2px solid #eee;
-  white-space: nowrap;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .locations-table td {
-  padding: 1rem 0.75rem;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 1rem;
   text-align: center;
-  vertical-align: middle;
-}
-
-.locations-table tbody tr:hover {
-  background-color: #f8f9fa;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .location-name {
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: #374151;
 }
 
 .address {
+  text-align: left;
   max-width: 300px;
-  word-break: break-all;
-  line-height: 1.3;
 }
 
 .detail-address {
-  display: inline;
+  color: #6b7280;
   font-size: 0.8rem;
-  color: #666;
-  margin-left: 0.25rem;
-  font-weight: normal;
 }
 
 .phone {
-  color: #666;
-  font-family: monospace;
+  position: relative;
 }
 
-/* PC에서는 텍스트만 보이고 버튼은 숨김 */
 .phone-text {
   display: inline;
 }
 
 .phone-button {
   display: none;
-  background: #007bff;
-  color: white;
+  color: #3b82f6;
   text-decoration: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
   font-weight: 500;
-  transition: background-color 0.2s ease;
-  font-family: monospace;
 }
 
 .phone-button:hover {
-  background: #0056b3;
+  text-decoration: underline;
+}
+
+.talk-button {
+  background: #fee500;
+  color: #3c1e1e;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.talk-button:hover {
+  background: #fdd500;
 }
 
 .no-channel {
-  color: #999;
-  font-size: 0.9rem;
-}
-
-/* 톡상담 버튼 스타일 */
-.talk-button {
-  background: #FFD700;
-  border: none;
-  border-radius: 25px;
-  gap: 6px;
-  padding: 0.4rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #333;
-  min-width: 80px;
-  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
-}
-.talk-button:hover {
-  background: #FFC107;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.4);
-}
-.talk-text {
-  color: #333;
-  font-weight: 700;
-  white-space: nowrap;
+  color: #9ca3af;
+  font-size: 0.875rem;
 }
 
 .map-button {
-  background: #666;
+  background: #374151;
   color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
   border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 500;
+  transition: all 0.2s ease;
 }
+
 .map-button:hover {
-  background: #555;
+  background: #4b5563;
 }
 
 .no-results {
   padding: 4rem 2rem;
   text-align: center;
-  min-height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .no-results-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   max-width: 500px;
+  margin: 0 auto;
 }
-
-
 
 .no-results-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #333;
+  color: #374151;
   margin-bottom: 1rem;
 }
 
 .no-results-text {
-  font-size: 1rem;
-  color: #666;
+  color: #6b7280;
   line-height: 1.6;
   margin-bottom: 2rem;
-  text-align: center;
 }
 
 .partnership-button {
-  padding: 1rem 2rem;
-  background: linear-gradient(to right, #aa8b5d, #6b7280);
+  background: #059669;
   color: white;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
-  white-space: nowrap;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(170, 139, 93, 0.3);
-  position: relative;
-  overflow: hidden;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .partnership-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(170, 139, 93, 0.4);
+  background: #047857;
 }
 
-.partnership-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to right, #6b7280, #aa8b5d);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 1;
+.loading-section, .error-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.partnership-button:hover::before {
-  opacity: 1;
-}
-
-.partnership-button span {
-  position: relative;
-  z-index: 2;
-}
-
+/* 모바일 최적화 */
 @media (max-width: 768px) {
-  .content {
-    padding: 1rem;
-  }
-  
-  .search-controls {
-    gap: 1rem;
-  }
-  
-  .region-buttons {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.4rem;
-    justify-content: center;
-  }
-  
-  .region-button {
-    padding: 0.5rem 0.3rem;
-    font-size: 0.75rem;
-    min-width: 100px;
+  .search-box {
+    flex-direction: column;
+    align-items: stretch;
   }
   
   .search-filter {
-    font-size: 0.75rem; 
-    padding: 0.5rem 0.8rem;
+    min-width: auto;
   }
-  .search-section {
-    padding: 1rem;
-  }
-  .search-box {
-    max-width: none;
+  
+  .region-buttons {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   }
   
   .locations-table {
@@ -674,65 +500,20 @@ const contactPartnership = () => {
   
   .locations-table th,
   .locations-table td {
-    padding: 0.5rem 0.25rem;
+    padding: 0.5rem;
   }
   
   .address {
-    max-width: none;
+    max-width: 200px;
   }
-
-  .detail-address {
-    font-size: 0.7rem;
-    margin-left: 0.2rem;
-  }
-
-  /* 모바일에서는 텍스트 숨기고 버튼만 보임 */
+  
+  /* 모바일에서 전화번호 버튼 표시 */
   .phone-text {
     display: none;
   }
-
+  
   .phone-button {
-    display: inline-block;
-    font-size: 0.7rem;
-    padding: 0.3rem 0.6rem;
-  }
-
-  .talk-button {
-    padding: 0.4rem 0.4rem;
-    font-size: 0.7rem;
-    min-width: 25px;
-    gap: 0.1rem;
-  }
-  
-  .talk-icon {
-    width: 0.75rem;
-    height: 0.75rem;
-  }
-  .talk-text {
-    font-size: 0.75rem;
-  }
-
-  .map-button{
-    font-size: 0.75rem;
-    padding: 0.2rem 0.4rem;
-  }
-  
-  .no-results {
-    padding: 2rem 1rem;
-    min-height: 300px;
-  }
-  
-  .no-results-title {
-    font-size: 1.2rem;
-  }
-  
-  .no-results-text {
-    font-size: 0.9rem;
-  }
-  
-  .partnership-button {
-    padding: 0.8rem 1.5rem;
-    font-size: 0.9rem;
+    display: inline;
   }
 }
 </style> 

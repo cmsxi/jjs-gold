@@ -69,6 +69,7 @@
                 v-model="searchQuery"
                 placeholder="검색어 입력"
                 class="search-input"
+                @input="handleSearchInput"
               />
             </div>
             <div class="region-buttons">
@@ -89,8 +90,14 @@
             <!-- 지점 정보 입력 -->
             <div class="w-full md:w-2/5 bg-white rounded-lg shadow-md p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-lg font-semibold text-gray-800"> 지점 정보 입력 </h2>
-                    <button @click="registerStore" class="px-4 py-2 bg-gray-700 text-white text-sm rounded hover:bg-gray-600 transition"> 등록하기 </button>
+                    <h2 class="text-lg font-semibold text-gray-800">지점 정보 입력</h2>
+                    <button 
+                        @click="registerStore" 
+                        :disabled="isRegistering"
+                        class="px-4 py-2 bg-gray-700 text-white text-sm rounded hover:bg-gray-600 transition disabled:opacity-50"
+                    >
+                        {{ isRegistering ? '등록 중...' : '등록하기' }}
+                    </button>
                 </div>
                 <div class="space-y-4">
                     <!-- 지역 표시 -->
@@ -101,13 +108,13 @@
                         </div>
                     </div>
                     
-                                        <div>
+                    <div>
                         <label for="name" class="block text-sm font-medium text-gray-700 mb-1 whitespace-nowrap">협력점명 *</label>
                         <input id="name" v-model="formData.name" type="text" required
                          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400" />
                     </div>
                     <div>
-                        <label for="address" class="block text-sm font-medium text-gray-700 mb-1  whitespace-nowrap">주소 *</label>
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-1 whitespace-nowrap">주소 *</label>
                         <div class="flex gap-2">
                             <input id="address" v-model="formData.address" type="text" required
                              class="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400" />
@@ -160,7 +167,30 @@
                         </div>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
+                
+                <!-- 로딩 상태 -->
+                <div v-if="loading" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    <p class="mt-4 text-gray-600">데이터를 불러오는 중...</p>
+                </div>
+                
+                <!-- 오류 상태 -->
+                <div v-else-if="error" class="text-center py-12">
+                    <div class="text-red-600 mb-4">
+                        <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">데이터 로드 실패</h3>
+                    <p class="text-gray-600 mb-4">{{ error }}</p>
+                    <button @click="loadLocations" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">
+                        다시 시도
+                    </button>
+                </div>
+                
+                <!-- 테이블 내용 -->
+                <div v-else class="overflow-x-auto">
                 <table class="min-w-full text-sm table-auto">
                 <thead class="bg-gray-100 text-gray-700 text-center">
                     <tr>
@@ -191,7 +221,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                        <tr v-for="location in paginatedLocations" :key="location.id" 
+                        <tr v-for="location in locations" :key="location.id" 
                             :class="{ 'bg-green-50 border-l-4 border-green-400': location.isNewlyAdded }">
                             <td class="px-4 py-3 text-center">
                                 <input 
@@ -313,8 +343,12 @@
                         <button @click="showDeleteModal = false" class="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50">
                             취소
                         </button>
-                        <button @click="deleteSelectedLocations" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                            삭제
+                        <button 
+                            @click="deleteSelectedLocations" 
+                            :disabled="isDeletingLocations"
+                            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                        >
+                            {{ isDeletingLocations ? '삭제 중...' : '삭제' }}
                         </button>
                     </div>
                 </div>
@@ -327,6 +361,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { jinjungsungService } from '@/services/jinjungsungService.js'
 
 const router = useRouter()
 
@@ -335,6 +370,12 @@ const isAuthenticated = ref(false)
 const passwordInput = ref('')
 const passwordError = ref('')
 const adminPassword = 'tnstngkswna1!' // 실제 운영 시에는 환경변수나 더 안전한 방식 사용
+
+// 로딩 상태
+const loading = ref(false)
+const error = ref('')
+const isRegistering = ref(false)
+const isDeletingLocations = ref(false)
 
 // 기본 폼 데이터
 const formData = ref({
@@ -346,12 +387,15 @@ const formData = ref({
     kakaoChannel: ''
 })
 
-// 검색 및 필터 변수들 (LocationFinder.vue 참고)
+// 검색 및 필터 변수들
 const searchQuery = ref('')
 const searchFilter = ref('협력점명')
 const selectedRegionFilter = ref('')
 
-// 지역 목록 (LocationFinder.vue와 동일)
+// 검색 입력 디바운스용 타이머
+let searchTimer = null
+
+// 지역 목록
 const regions = ref([
   { value: '', label: '전체' },
   { value: '본점', label: '본점' },
@@ -389,6 +433,9 @@ const sortOrder = ref('desc')
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
 const totalCount = ref(0)
+
+// 지점 데이터
+const locations = ref([])
 
 // 지역 매칭 맵
 const regionMap = {
@@ -482,38 +529,31 @@ const regionMap = {
 const extractRegionFromAddress = (address) => {
     if (!address) return ''
     
-    // 주소를 공백으로 분할하여 각 부분을 검사
     const addressParts = address.split(' ')
     
-    // 첫 번째로 시/도 정보 확인
     for (const part of addressParts) {
-        // 광역시/특별시/도 확인
         if (part.includes('서울') || part.includes('서울특별시')) {
-            // 서울의 경우 구를 확인하여 강남/강북 구분
             for (const addressPart of addressParts) {
                 if (regionMap[addressPart]) {
                     return regionMap[addressPart]
                 }
             }
-            return '서울강남' // 기본값
+            return '서울강남'
         }
         
         if (part.includes('경기') || part.includes('경기도')) {
-            // 경기도의 경우 시/군 확인
             for (const addressPart of addressParts) {
                 if (regionMap[addressPart]) {
                     return regionMap[addressPart]
                 }
             }
-            return '경기남부' // 기본값
+            return '경기남부'
         }
         
-        // 기타 광역시/도 직접 매칭
         if (regionMap[part]) {
             return regionMap[part]
         }
         
-        // 시/군/구 단위로 매칭
         for (const [key, value] of Object.entries(regionMap)) {
             if (part.includes(key)) {
                 return value
@@ -534,13 +574,10 @@ watch(() => formData.value.address, (newAddress) => {
     }
 })
 
-// 전화번호 입력 처리 (숫자와 하이픈만 허용)
+// 전화번호 입력 처리
 const handlePhoneInput = (event) => {
-    // 숫자, 하이픈, 공백만 허용하고 나머지는 제거
     let value = event.target.value.replace(/[^\d\-\s]/g, '')
-    
-    // 자동 하이픈 추가 (예: 010-1234-5678)
-    value = value.replace(/[^\d]/g, '') // 일단 숫자만 남기기
+    value = value.replace(/[^\d]/g, '')
     
     if (value.length >= 3) {
         if (value.length <= 7) {
@@ -553,100 +590,206 @@ const handlePhoneInput = (event) => {
     formData.value.phone = value
 }
 
-// 지점 목록 (예시 데이터)
-const locations = ref([
-    {
-        id: 1,
-        district: '본점',
-        name: '진정성금은 본점',
-        address: '서울특별시 강남구 테헤란로 123',
-        detailAddress: '10층 1001호',
-        phone: '02-1234-5678',
-        kakaoChannel: 'https://pf.kakao.com/_example1',
-        isNewlyAdded: false,
-        created_at: '2024-01-01T00:00:00Z'
-    },
-    {
-        id: 2,
-        district: '서울강남',
-        name: '진정성금은 강남점',
-        address: '서울특별시 강남구 역삼동 456',
-        detailAddress: '2층',
-        phone: '02-2345-6789',
-        kakaoChannel: 'https://pf.kakao.com/_example2',
-        isNewlyAdded: false,
-        created_at: '2024-01-02T00:00:00Z'
-    }
-])
-
-// 검색 및 필터링된 지점 목록
-const filteredLocations = computed(() => {
-    let filtered = locations.value
-    
-    // 지역 필터 적용
-    if (selectedRegionFilter.value) {
-        filtered = filtered.filter(location => 
-            location.district === selectedRegionFilter.value
-        )
-    }
-    
-    // 검색어 필터 적용
-    if (searchQuery.value) {
-        filtered = filtered.filter(location => {
-            const query = searchQuery.value.toLowerCase()
-            switch (searchFilter.value) {
-                case '협력점명':
-                    return location.name.toLowerCase().includes(query)
-                case '주소':
-                    return location.address.toLowerCase().includes(query) ||
-                           (location.detailAddress && location.detailAddress.toLowerCase().includes(query))
-                case '전화번호':
-                    return location.phone.includes(query)
-                default:
-                    return location.name.toLowerCase().includes(query) || 
-                           location.address.toLowerCase().includes(query) ||
-                           (location.detailAddress && location.detailAddress.toLowerCase().includes(query)) ||
-                           location.phone.includes(query)
-            }
-        })
-    }
-    
-    return filtered
-})
-
-// 정렬된 지점 목록
-const sortedLocations = computed(() => {
-    const sorted = [...filteredLocations.value]
-    
-    sorted.sort((a, b) => {
-        let aValue = a[sortField.value]
-        let bValue = b[sortField.value]
+// 지점 데이터 로드
+const loadLocations = async () => {
+    try {
+        loading.value = true
+        error.value = ''
         
-        // 문자열 비교
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-            aValue = aValue.toLowerCase()
-            bValue = bValue.toLowerCase()
+        const params = {
+            page: currentPage.value,
+            limit: itemsPerPage.value,
+            searchQuery: searchQuery.value,
+            searchFilter: searchFilter.value,
+            district: selectedRegionFilter.value,
+            sortBy: sortField.value,
+            sortOrder: sortOrder.value
         }
         
-        if (sortOrder.value === 'asc') {
-            return aValue > bValue ? 1 : -1
-        } else {
-            return aValue < bValue ? 1 : -1
-        }
-    })
-    
-    return sorted
-})
+        const [locationsResponse, countResponse] = await Promise.all([
+            jinjungsungService.getRegisterStoreLocations(params),
+            jinjungsungService.getRegisterStoreLocationsCount(params)
+        ])
+        
+        locations.value = locationsResponse.locations || locationsResponse || []
+        totalCount.value = countResponse.count || countResponse || 0
+        
+        // 체크박스 선택 초기화
+        selectedLocationIds.value = []
+        selectAll.value = false
+        
+    } catch (err) {
+        console.error('지점 데이터 로드 실패:', err)
+        error.value = err.message || '지점 데이터를 불러오는 중 오류가 발생했습니다.'
+    } finally {
+        loading.value = false
+    }
+}
 
-// 페이지네이션 관련 computed 속성들
+// 지점 등록
+const registerStore = async () => {
+    try {
+        // 필수 필드 검증
+        if (!formData.value.name || !formData.value.address || !formData.value.phone) {
+            alert('필수 항목(협력점명, 주소, 전화번호)을 모두 입력해주세요.')
+            return
+        }
+        
+        isRegistering.value = true
+        
+        const locationData = {
+            name: formData.value.name,
+            address: formData.value.address,
+            detailAddress: formData.value.detailAddress || '',
+            phone: formData.value.phone,
+            district: formData.value.region,
+            kakaoChannel: formData.value.kakaoChannel || ''
+        }
+        
+        await jinjungsungService.registerLocation(locationData)
+        
+        alert('지점이 성공적으로 등록되었습니다.')
+        
+        // 폼 초기화
+        formData.value = {
+            region: '',
+            name: '',
+            address: '',
+            detailAddress: '',
+            phone: '',
+            kakaoChannel: ''
+        }
+        
+        // 목록 새로고침
+        await loadLocations()
+        
+    } catch (err) {
+        console.error('지점 등록 실패:', err)
+        alert(err.message || '지점 등록 중 오류가 발생했습니다.')
+    } finally {
+        isRegistering.value = false
+    }
+}
+
+// 검색 입력 처리 (디바운스)
+const handleSearchInput = () => {
+    if (searchTimer) {
+        clearTimeout(searchTimer)
+    }
+    
+    searchTimer = setTimeout(() => {
+        currentPage.value = 1
+        loadLocations()
+    }, 300)
+}
+
+// 지역 선택
+const selectRegion = (regionValue) => {
+    selectedRegionFilter.value = regionValue
+    currentPage.value = 1
+    loadLocations()
+}
+
+// 정렬
+const sortBy = (field) => {
+    if (sortField.value === field) {
+        sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+    } else {
+        sortField.value = field
+        sortOrder.value = 'asc'
+    }
+    
+    currentPage.value = 1
+    loadLocations()
+}
+
+// 페이지 변경
+const changePage = (page) => {
+    if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page
+        loadLocations()
+    }
+}
+
+// 전체 선택/해제
+const toggleSelectAll = () => {
+    if (selectAll.value) {
+        selectedLocationIds.value = locations.value.map(location => location.id)
+    } else {
+        selectedLocationIds.value = []
+    }
+}
+
+// 선택된 지점 삭제
+const deleteSelectedLocations = async () => {
+    try {
+        isDeletingLocations.value = true
+        
+        await jinjungsungService.deleteSelectedLocations(selectedLocationIds.value)
+        
+        alert('선택된 지점들이 성공적으로 삭제되었습니다.')
+        
+        // 모달 닫기
+        showDeleteModal.value = false
+        
+        // 선택 초기화
+        selectedLocationIds.value = []
+        selectAll.value = false
+        
+        // 목록 새로고침
+        await loadLocations()
+        
+    } catch (err) {
+        console.error('지점 삭제 실패:', err)
+        alert(err.message || '지점 삭제 중 오류가 발생했습니다.')
+    } finally {
+        isDeletingLocations.value = false
+    }
+}
+
+// 카카오톡 채널 열기
+const openKakaoChannel = (channelUrl) => {
+    if (channelUrl) {
+        window.open(channelUrl, '_blank')
+    }
+}
+
+// 카카오맵 열기
+const showKakaoMap = (location) => {
+    const address = location.address + (location.detailAddress ? ` ${location.detailAddress}` : '')
+    const mapUrl = `https://map.kakao.com/link/search/${encodeURIComponent(address)}`
+    window.open(mapUrl, '_blank')
+}
+
+// 주소 찾기 (예시)
+const searchAddress = () => {
+    alert('주소 찾기 기능은 추후 구현될 예정입니다.')
+}
+
+// 인증 관련 메서드들
+const checkPassword = () => {
+    if (passwordInput.value === adminPassword) {
+        isAuthenticated.value = true
+        sessionStorage.setItem('admin_authenticated', 'true')
+        passwordError.value = ''
+    } else {
+        passwordError.value = '비밀번호가 올바르지 않습니다.'
+    }
+}
+
+const goBack = () => {
+    router.back()
+}
+
+const logout = () => {
+    isAuthenticated.value = false
+    sessionStorage.removeItem('admin_authenticated')
+    router.push('/')
+}
+
+// 계산된 속성들
 const totalPages = computed(() => {
-    return Math.ceil(sortedLocations.value.length / itemsPerPage.value)
-})
-
-const paginatedLocations = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage.value
-    const end = start + itemsPerPage.value
-    return sortedLocations.value.slice(start, end)
+    return Math.ceil(totalCount.value / itemsPerPage.value)
 })
 
 const startItem = computed(() => {
@@ -654,17 +797,21 @@ const startItem = computed(() => {
 })
 
 const endItem = computed(() => {
-    const end = currentPage.value * itemsPerPage.value
-    return Math.min(end, sortedLocations.value.length)
+    return Math.min(currentPage.value * itemsPerPage.value, totalCount.value)
 })
 
 const visiblePages = computed(() => {
-    const pages = []
-    const total = totalPages.value
     const current = currentPage.value
+    const total = totalPages.value
+    const pages = []
     
-    let start = Math.max(1, current - 2)
-    let end = Math.min(total, current + 2)
+    const maxVisible = 5
+    let start = Math.max(1, current - Math.floor(maxVisible / 2))
+    let end = Math.min(total, start + maxVisible - 1)
+    
+    if (end - start + 1 < maxVisible) {
+        start = Math.max(1, end - maxVisible + 1)
+    }
     
     for (let i = start; i <= end; i++) {
         pages.push(i)
@@ -673,356 +820,132 @@ const visiblePages = computed(() => {
     return pages
 })
 
-// 선택된 지점 목록
 const selectedLocations = computed(() => {
-    return locations.value.filter(location => 
-        selectedLocationIds.value.includes(location.id)
-    )
+    return locations.value.filter(location => selectedLocationIds.value.includes(location.id))
 })
 
-// 실시간 검색 설정
-watch([searchQuery, searchFilter], () => {
-    currentPage.value = 1 // 검색 시 첫 페이지로 이동
-    // 검색 변경 시 체크박스 선택 초기화
-    selectedLocationIds.value = []
-    selectAll.value = false
-}, { deep: true })
-
-// 지역 필터 변경 시 첫 페이지로 이동
-watch(selectedRegionFilter, () => {
-    currentPage.value = 1
-    // 지역 필터 변경 시 체크박스 선택 초기화
-    selectedLocationIds.value = []
-    selectAll.value = false
+// 검색 필터 변경 감지
+watch(searchFilter, () => {
+    if (searchQuery.value) {
+        currentPage.value = 1
+        loadLocations()
+    }
 })
 
-// 총 개수 업데이트
-watch(sortedLocations, (newLocations) => {
-    totalCount.value = newLocations.length
-}, { immediate: true })
-
-// 지역 선택 함수
-const selectRegion = (regionValue) => {
-    selectedRegionFilter.value = regionValue
-}
-
-// 정렬 함수
-const sortBy = (field) => {
-    if (sortField.value === field) {
-        sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-    } else {
-        sortField.value = field
-        sortOrder.value = 'asc'
-    }
-}
-
-// 페이지 변경 함수
-const changePage = (page) => {
-    if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-    }
-}
-
-// 전체 선택/해제 함수
-const toggleSelectAll = () => {
-    if (selectAll.value) {
-        selectedLocationIds.value = paginatedLocations.value.map(location => location.id)
-    } else {
-        selectedLocationIds.value = []
-    }
-}
-
-// 선택된 지점 삭제 함수
-const deleteSelectedLocations = () => {
-    const remainingLocations = locations.value.filter(location => 
-        !selectedLocationIds.value.includes(location.id)
-    )
-    
-    locations.value = remainingLocations
-    selectedLocationIds.value = []
-    selectAll.value = false
-    showDeleteModal.value = false
-    
-    // 현재 페이지에 데이터가 없으면 이전 페이지로 이동
-    if (paginatedLocations.value.length === 0 && currentPage.value > 1) {
-        currentPage.value = currentPage.value - 1
-    }
-    
-    alert(`선택된 지점이 삭제되었습니다.`)
-}
-
-// 다음 주소 API 스크립트 로드
-const loadDaumPostcode = () => {
-    return new Promise((resolve) => {
-        if (window.daum && window.daum.Postcode) {
-            resolve()
-            return
-        }
-        const script = document.createElement('script')
-        script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
-        script.onload = resolve
-        document.head.appendChild(script)
-    })
-}
-
-// 주소 찾기 기능
-const searchAddress = async () => {
-    await loadDaumPostcode()
-    
-    new window.daum.Postcode({
-        oncomplete: function(data) {
-            let addr = ''
-            let extraAddr = ''
-
-            if (data.userSelectedType === 'R') {
-                addr = data.roadAddress
-            } else {
-                addr = data.jibunAddress
-            }
-
-            if (data.userSelectedType === 'R') {
-                if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
-                    extraAddr += data.bname
-                }
-                if (data.buildingName !== '' && data.apartment === 'Y') {
-                    extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName)
-                }
-                if (extraAddr !== '') {
-                    extraAddr = ' (' + extraAddr + ')'
-                }
-            }
-
-            const fullAddress = addr + extraAddr
-            formData.value.address = fullAddress
-            // 지역은 watch에서 자동으로 설정됨
-        }
-    }).open()
-}
-
-// 지점 등록 기능
-const registerStore = () => {
-    if (!formData.value.region || !formData.value.name || !formData.value.address || !formData.value.phone) {
-        alert('필수 항목을 모두 입력해주세요.')
-        return
-    }
-
-    const newLocation = {
-        id: locations.value.length + 1,
-        district: formData.value.region,
-        name: formData.value.name,
-        address: formData.value.address,
-        detailAddress: formData.value.detailAddress,
-        phone: formData.value.phone,
-        kakaoChannel: formData.value.kakaoChannel,
-        isNewlyAdded: true,
-        created_at: new Date().toISOString()
-    }
-
-    locations.value.push(newLocation)
-    
-    // 폼 초기화
-    formData.value = {
-        region: '',
-        name: '',
-        address: '',
-        detailAddress: '',
-        phone: '',
-        kakaoChannel: ''
-    }
-
-    alert('지점이 성공적으로 등록되었습니다.')
-}
-
-// 카카오톡 채널 열기
-const openKakaoChannel = (channelUrl) => {
-    window.open(channelUrl, '_blank')
-}
-
-// 카카오맵 열기 (새 탭)
-const showKakaoMap = (location) => {
-    // 상세주소가 있으면 기본 주소와 함께 검색
-    const fullAddress = location.address + (location.detailAddress ? ' ' + location.detailAddress : '')
-    const kakaoMapUrl = `https://map.kakao.com/link/search/${encodeURIComponent(fullAddress)}`
-    window.open(kakaoMapUrl, '_blank')
-}
-
-// 인증 관련 함수들
-const checkPassword = () => {
-    if (passwordInput.value === adminPassword) {
-        isAuthenticated.value = true
-        passwordError.value = ''
-        passwordInput.value = ''
-        // 세션 스토리지에 인증 상태 저장
-        sessionStorage.setItem('registerStore_authenticated', 'true')
-    } else {
-        passwordError.value = '잘못된 비밀번호입니다.'
-        passwordInput.value = ''
-    }
-}
-
-const logout = () => {
-    isAuthenticated.value = false
-    sessionStorage.removeItem('registerStore_authenticated')
-    passwordError.value = ''
-    passwordInput.value = ''
-}
-
-const goBack = () => {
-    router.go(-1)
-}
-
+// 컴포넌트 마운트 시 인증 상태 확인 및 데이터 로드
 onMounted(() => {
     // 세션 스토리지에서 인증 상태 확인
-    const authStatus = sessionStorage.getItem('registerStore_authenticated')
+    const authStatus = sessionStorage.getItem('admin_authenticated')
     if (authStatus === 'true') {
         isAuthenticated.value = true
     }
     
-    // 컴포넌트 마운트 시 다음 주소 API 스크립트 미리 로드
-    loadDaumPostcode()
+    // 인증된 경우 데이터 로드
+    if (isAuthenticated.value) {
+        loadLocations()
+    }
 })
 </script>
 
 <style scoped>
-/* 검색 섹션 스타일 (LocationFinder.vue 참고) */
+/* 기본 스타일 */
 .search-section {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .search-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .search-box {
-  display: flex;
-  gap: 0.5rem;
-  width: 100%; 
-  max-width: 1000px;
-  justify-content: center;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .search-filter {
-  max-width: 120px; 
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px; 
-  font-size: 0.9rem;
-  background: white;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: white;
+    font-size: 0.875rem;
+    min-width: 120px;
 }
 
 .search-input {
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  min-width: 100px;
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.875rem;
 }
 
-.delete-button {
-  padding: 0.5rem 1rem;
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  white-space: nowrap;
-  transition: background-color 0.2s ease;
+.search-input:focus {
+    outline: none;
+    border-color: #6b7280;
+    box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
 }
 
-.delete-button:hover {
-  background: #b91c1c;
-}
-
-/* 지역 버튼 그리드 */
 .region-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 0.75rem;
-  width: 100%;
-  max-width: 1000px;
-  justify-items: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.5rem;
 }
 
 .region-button {
-  padding: 0.5rem 1rem;
-  background: #f8f9fa;
-  color: #666;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-  min-width: 100px;
-  text-align: center;
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: white;
+    color: #374151;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 .region-button:hover {
-  background: #e9ecef;
-  border-color: #666;
+    background: #f3f4f6;
 }
 
 .region-button.active {
-  background: #666;
-  color: white;
-  border-color: #666;
+    background: #374151;
+    color: white;
+    border-color: #374151;
 }
 
-/* 테이블 헤더 스타일 */
-.table-header {
-  background: #f8f9fa;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #eee;
+.delete-button {
+    padding: 0.5rem 1rem;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-/* 페이지네이션 스타일 */
-.pagination {
-  background: #f8f9fa;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #eee;
+.delete-button:hover {
+    background: #b91c1c;
 }
 
-/* 반응형 디자인 */
+/* 모바일 반응형 */
 @media (max-width: 768px) {
-  .search-controls {
-    gap: 1rem;
-  }
-  
-  .region-buttons {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.4rem;
-    justify-content: center;
-  }
-  
-  .region-button {
-    padding: 0.5rem 0.3rem;
-    font-size: 0.75rem;
-    min-width: 100px;
-  }
-  
-  .search-filter,
-  .search-input,
-  .delete-button {
-    font-size: 0.75rem; 
-    padding: 0.5rem 0.8rem;
-  }
-  
-  .search-section {
-    padding: 1rem;
-  }
-  
-  .search-box {
-    max-width: none;
-  }
+    .search-box {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-filter {
+        min-width: auto;
+    }
+    
+    .region-buttons {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    }
 }
 </style>

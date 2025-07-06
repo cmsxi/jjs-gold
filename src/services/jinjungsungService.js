@@ -385,6 +385,302 @@ export const jinjungsungService = {
   },
 
   // ========================================
+  // LocationFinder 전용 API 함수들
+  // ========================================
+
+  /**
+   * 공개 지점 목록 조회 (LocationFinder 페이지용)
+   * @param {Object} params - 조회 매개변수
+   * @param {string} params.searchQuery - 검색어
+   * @param {string} params.searchFilter - 검색 필터 (협력점명, 주소, 전화번호)
+   * @param {string} params.district - 지역 필터
+   * @param {boolean} params.activeOnly - 활성 지점만 조회 (기본값: true)
+   */
+  async getPublicLocations(params = {}) {
+    try {
+      const queryParams = {
+        search_query: params.searchQuery || null,
+        search_filter: params.searchFilter || '협력점명',
+        district: params.district || null,
+        active_only: params.activeOnly !== false, // 기본값 true
+        sort_by: 'district',
+        sort_order: 'asc'
+      }
+
+      // null 값 제거
+      Object.keys(queryParams).forEach(key => {
+        if (queryParams[key] === null) {
+          delete queryParams[key]
+        }
+      })
+
+      const response = await api.get('/public/locations', { params: queryParams })
+      return response.data
+    } catch (error) {
+      console.error('공개 지점 목록 조회 오류:', error)
+      throw new Error(error.response?.data?.detail || '지점 목록을 불러오는 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 지역별 지점 수 조회 (LocationFinder 페이지용)
+   * @param {boolean} activeOnly - 활성 지점만 조회
+   */
+  async getLocationCountByRegion(activeOnly = true) {
+    try {
+      const response = await api.get('/public/locations/count-by-region', {
+        params: { active_only: activeOnly }
+      })
+      return response.data
+    } catch (error) {
+      console.error('지역별 지점 수 조회 오류:', error)
+      throw new Error(error.response?.data?.detail || '지역별 지점 수를 조회하는 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 지점 상세 정보 조회 (공개용)
+   * @param {number} locationId - 지점 ID
+   */
+  async getPublicLocationDetail(locationId) {
+    try {
+      if (!locationId || locationId <= 0) {
+        throw new Error('유효한 지점 ID가 필요합니다.')
+      }
+
+      const response = await api.get(`/public/locations/${locationId}`)
+      return response.data
+    } catch (error) {
+      console.error('지점 상세 정보 조회 오류:', error)
+      
+      if (error.response?.status === 404) {
+        throw new Error('해당 지점을 찾을 수 없습니다.')
+      }
+      
+      throw new Error(error.response?.data?.detail || '지점 정보를 조회하는 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 인근 지점 찾기 (위치 기반)
+   * @param {number} latitude - 위도
+   * @param {number} longitude - 경도
+   * @param {number} radius - 반경 (km, 기본값: 10km)
+   * @param {number} limit - 조회 개수 제한 (기본값: 10개)
+   */
+  async getNearbyLocations(latitude, longitude, radius = 10, limit = 10) {
+    try {
+      if (!latitude || !longitude) {
+        throw new Error('위도와 경도 정보가 필요합니다.')
+      }
+
+      const response = await api.get('/public/locations/nearby', {
+        params: { latitude, longitude, radius, limit }
+      })
+      return response.data
+    } catch (error) {
+      console.error('인근 지점 조회 오류:', error)
+      throw new Error(error.response?.data?.detail || '인근 지점을 조회하는 중 오류가 발생했습니다.')
+    }
+  },
+
+  // ========================================
+  // RegisterStore 추가 API 함수들
+  // ========================================
+
+  /**
+   * 지점 정보 수정 (RegisterStore용)
+   * @param {number} locationId - 지점 ID
+   * @param {Object} updateData - 수정할 데이터
+   */
+  async updateRegisterStoreLocation(locationId, updateData) {
+    try {
+      if (!locationId || locationId <= 0) {
+        throw new Error('유효한 지점 ID가 필요합니다.')
+      }
+
+      const response = await api.put(`/register-store/locations/${locationId}`, updateData)
+      return response.data
+    } catch (error) {
+      console.error('지점 정보 수정 오류:', error)
+      
+      if (error.response?.status === 404) {
+        throw new Error('해당 지점을 찾을 수 없습니다.')
+      }
+      
+      throw new Error(error.response?.data?.detail || '지점 정보 수정 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 지점 상태 변경 (활성/비활성)
+   * @param {number} locationId - 지점 ID
+   * @param {boolean} isActive - 활성 상태
+   */
+  async updateLocationStatus(locationId, isActive) {
+    try {
+      if (!locationId || locationId <= 0) {
+        throw new Error('유효한 지점 ID가 필요합니다.')
+      }
+
+      const response = await api.patch(`/register-store/locations/${locationId}/status`, {
+        is_active: isActive
+      })
+      return response.data
+    } catch (error) {
+      console.error('지점 상태 변경 오류:', error)
+      
+      if (error.response?.status === 404) {
+        throw new Error('해당 지점을 찾을 수 없습니다.')
+      }
+      
+      throw new Error(error.response?.data?.detail || '지점 상태 변경 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 지점 통계 정보 조회
+   */
+  async getLocationStatistics() {
+    try {
+      const response = await api.get('/register-store/locations/statistics')
+      return response.data
+    } catch (error) {
+      console.error('지점 통계 조회 오류:', error)
+      throw new Error(error.response?.data?.detail || '지점 통계를 조회하는 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 지점 검색 제안 (자동완성)
+   * @param {string} query - 검색어
+   * @param {string} type - 검색 타입 (name, address, district)
+   * @param {number} limit - 조회 개수 제한
+   */
+  async getLocationSuggestions(query, type = 'name', limit = 5) {
+    try {
+      if (!query || query.trim().length < 2) {
+        return []
+      }
+
+      const response = await api.get('/register-store/locations/suggestions', {
+        params: { query: query.trim(), type, limit }
+      })
+      return response.data
+    } catch (error) {
+      console.error('지점 검색 제안 오류:', error)
+      // 검색 제안은 실패해도 빈 배열 반환
+      return []
+    }
+  },
+
+  /**
+   * 지점 데이터 내보내기 (Excel)
+   * @param {Object} filters - 필터 조건
+   */
+  async exportLocationsData(filters = {}) {
+    try {
+      const queryParams = {
+        search_query: filters.searchQuery || null,
+        search_filter: filters.searchFilter || null,
+        district: filters.district || null,
+        sort_by: filters.sortBy || 'created_at',
+        sort_order: filters.sortOrder || 'desc'
+      }
+
+      // null 값 제거
+      Object.keys(queryParams).forEach(key => {
+        if (queryParams[key] === null) {
+          delete queryParams[key]
+        }
+      })
+
+      const response = await api.get('/register-store/locations/export', {
+        params: queryParams,
+        responseType: 'blob'
+      })
+      
+      // Blob 데이터를 파일로 다운로드
+      const blob = new Blob([response.data], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `지점목록_${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      return true
+    } catch (error) {
+      console.error('지점 데이터 내보내기 오류:', error)
+      throw new Error(error.response?.data?.detail || '지점 데이터 내보내기 중 오류가 발생했습니다.')
+    }
+  },
+
+  // ========================================
+  // 공통 지역 및 설정 API
+  // ========================================
+
+  /**
+   * 지역 목록 조회 (계층적 구조)
+   */
+  async getRegionsHierarchy() {
+    try {
+      const response = await api.get('/regions/hierarchy')
+      return response.data
+    } catch (error) {
+      console.error('계층적 지역 목록 조회 오류:', error)
+      throw new Error(error.response?.data?.detail || '지역 목록을 불러오는 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 주소 검증 및 지역 자동 설정
+   * @param {string} address - 주소
+   */
+  async validateAddress(address) {
+    try {
+      if (!address || address.trim().length < 5) {
+        throw new Error('유효한 주소를 입력해주세요.')
+      }
+
+      const response = await api.post('/common/validate-address', {
+        address: address.trim()
+      })
+      return response.data
+    } catch (error) {
+      console.error('주소 검증 오류:', error)
+      throw new Error(error.response?.data?.detail || '주소 검증 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
+   * 카카오톡 채널 URL 유효성 검증
+   * @param {string} channelUrl - 카카오톡 채널 URL
+   */
+  async validateKakaoChannel(channelUrl) {
+    try {
+      if (!channelUrl) {
+        return { isValid: true, message: '' } // 선택사항이므로 빈 값도 유효
+      }
+
+      const response = await api.post('/common/validate-kakao-channel', {
+        channel_url: channelUrl
+      })
+      return response.data
+    } catch (error) {
+      console.error('카카오톡 채널 URL 검증 오류:', error)
+      return { 
+        isValid: false, 
+        message: error.response?.data?.detail || '카카오톡 채널 URL 검증 중 오류가 발생했습니다.' 
+      }
+    }
+  },
+
+  // ========================================
   // 기타 유틸리티
   // ========================================
 
