@@ -159,15 +159,10 @@ export const jinjungsungService = {
   // ========================================
 
   /**
-   * 공개 지점 목록 조회 (LocationFinder 페이지용 - 모든 데이터 한 번에 로드)
-   * @param {Object} params - 조회 매개변수 (현재는 사용하지 않음)
    */
-  async getPublicLocations(params = {}) {
+  async getPublicLocations() {
     try {
-      // 모든 활성 지점 데이터를 한 번에 가져오기 (페이지네이션 없음)
-      const response = await api.get('/locations', { 
-        params: { active_only: true } 
-      })
+      const response = await api.get('/locations')
       return response.data
     } catch (error) {
       console.error('공개 지점 목록 조회 오류:', error)
