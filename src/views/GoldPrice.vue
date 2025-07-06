@@ -289,7 +289,8 @@ const currentPriceData = computed(() => {
         { name: '금 24K', price: 542000, change: 0.0, unit: '1g' },
         { name: '금 18K', price: 398400, change: 0.0, unit: '1g' },
         { name: '금 14K', price: 309000, change: 0.0, unit: '1g' },
-        { name: '은', price: 5660, change: 0.71, unit: '1g' }
+        { name: '은', price: 5660, change: 0.71, unit: '1g' },
+        { name: '백금(Pt)', price: 216000, change: -0.92, unit: '1g' }
       ]
     }
   }
@@ -504,7 +505,7 @@ const chartData = computed(() => {
     })
   }
   
-  if (selectedCategory.value === 'platinum') {
+  if (selectedCategory.value === 'platinum' || selectedCategory.value === 'all') {
     datasets.push({
       label: '백금',
       data: generatePriceData(216000),
