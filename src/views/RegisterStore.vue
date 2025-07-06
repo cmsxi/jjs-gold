@@ -125,8 +125,8 @@
                         <p class="text-xs text-gray-500 mt-1">주소 입력 시 지역이 자동으로 설정됩니다</p>
                     </div>
                     <div>
-                        <label for="detailAddress" class="block text-sm font-medium text-gray-700 mb-1">상세주소</label>
-                        <input id="detailAddress" v-model="formData.detailAddress" type="text" 
+                        <label for="detail_address" class="block text-sm font-medium text-gray-700 mb-1">상세주소</label>
+                        <input id="detail_address" v-model="formData.detail_address" type="text" 
                                placeholder="동, 호수, 층수 등 상세주소를 입력하세요"
                          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400" />
                         <p class="text-xs text-gray-500 mt-1">예: 101동 1502호, 3층, B1층 등</p>
@@ -140,8 +140,8 @@
                         <p class="text-xs text-gray-500 mt-1">지역번호(02, 031 등), 휴대폰(010), 인터넷전화(070) 모두 입력 가능</p>
                     </div>
                     <div>
-                        <label for="kakaoChannel" class="block text-sm font-medium text-gray-700 mb-1">카카오톡 채널 링크</label>
-                        <input id="kakaoChannel" v-model="formData.kakaoChannel" type="url" placeholder="https://pf.kakao.com/_example"
+                        <label for="kakao_channel" class="block text-sm font-medium text-gray-700 mb-1">카카오톡 채널 링크</label>
+                        <input id="kakao_channel" v-model="formData.kakao_channel" type="url" placeholder="https://pf.kakao.com/_example"
                          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-400" />
                         <p class="text-xs text-gray-500 mt-1">카카오톡 채널 링크를 입력하세요 (선택사항)</p>
                     </div>
@@ -242,14 +242,14 @@
                         <td class="px-4 py-3 text-center font-medium text-gray-800">
                             <div>
                                 {{ location.address }}
-                                <span v-if="location.detailAddress" class="inline text-sm text-gray-600 ml-1">
-                                    ({{ location.detailAddress }})
+                                <span v-if="location.detail_address" class="inline text-sm text-gray-600 ml-1">
+                                    ({{ location.detail_address }})
                                 </span>
                             </div>
                         </td>
                         <td class="px-4 py-3 text-center break-words max-w-[300px] leading-snug">{{ location.phone }}</td>
                         <td class="px-4 py-3 text-center"> 
-                                <button v-if="location.kakaoChannel" @click="openKakaoChannel(location.kakaoChannel)" 
+                                <button v-if="location.kakao_channel" @click="openKakaoChannel(location.kakao_channel)" 
                                         class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold px-4 py-1 rounded-full shadow transition">
                                 톡채널
                             </button>
@@ -383,9 +383,9 @@ const formData = ref({
     region: '',
     name: '',
     address: '',
-    detailAddress: '',
+    detail_address: '',
     phone: '',
-    kakaoChannel: ''
+    kakao_channel: ''
 })
 
 // 검색 및 필터 변수들
@@ -685,7 +685,7 @@ const filteredLocations = computed(() => {
                 return location.name?.toLowerCase().includes(query)
             } else if (searchFilter.value === '주소') {
                 return location.address?.toLowerCase().includes(query) || 
-                       location.detailAddress?.toLowerCase().includes(query)
+                       location.detail_address?.toLowerCase().includes(query)
             } else if (searchFilter.value === '전화번호') {
                 return location.phone?.includes(query)
             }
@@ -781,10 +781,10 @@ const registerStore = async () => {
         const locationData = {
             name: formData.value.name,
             address: formData.value.address,
-            detailAddress: formData.value.detailAddress || '',
+            detail_address: formData.value.detail_address || '',
             phone: formData.value.phone,
             district: formData.value.region,
-            kakaoChannel: formData.value.kakaoChannel || ''
+            kakao_channel: formData.value.kakao_channel || ''
         }
         
         await jinjungsungService.registerLocation(locationData)
@@ -796,9 +796,9 @@ const registerStore = async () => {
             region: '',
             name: '',
             address: '',
-            detailAddress: '',
+            detail_address: '',
             phone: '',
-            kakaoChannel: ''
+            kakao_channel: ''
         }
         
         // 목록 새로고침
@@ -893,7 +893,7 @@ const openKakaoChannel = (channelUrl) => {
 
 // 카카오맵 열기
 const showKakaoMap = (location) => {
-    const address = location.address + (location.detailAddress ? ` ${location.detailAddress}` : '')
+    const address = location.address + (location.detail_address ? ` ${location.detail_address}` : '')
     const mapUrl = `https://map.kakao.com/link/search/${encodeURIComponent(address)}`
     window.open(mapUrl, '_blank')
 }
@@ -940,7 +940,7 @@ const searchAddress = () => {
                 
                 // 상세주소 입력 필드에 포커스
                 setTimeout(() => {
-                    const detailAddressInput = document.getElementById('detailAddress')
+                    const detailAddressInput = document.getElementById('detail_address')
                     if (detailAddressInput) {
                         detailAddressInput.focus()
                     }
