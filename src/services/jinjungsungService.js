@@ -414,7 +414,7 @@ export const jinjungsungService = {
         }
       })
 
-      const response = await api.get('/public/locations', { params: queryParams })
+      const response = await api.get('/locations', { params: queryParams })
       return response.data
     } catch (error) {
       console.error('공개 지점 목록 조회 오류:', error)
@@ -428,7 +428,7 @@ export const jinjungsungService = {
    */
   async getLocationCountByRegion(activeOnly = true) {
     try {
-      const response = await api.get('/public/locations/count-by-region', {
+      const response = await api.get('/locations/count-by-region', {
         params: { active_only: activeOnly }
       })
       return response.data
@@ -448,7 +448,7 @@ export const jinjungsungService = {
         throw new Error('유효한 지점 ID가 필요합니다.')
       }
 
-      const response = await api.get(`/public/locations/${locationId}`)
+      const response = await api.get(`/locations/${locationId}`)
       return response.data
     } catch (error) {
       console.error('지점 상세 정보 조회 오류:', error)
@@ -474,7 +474,7 @@ export const jinjungsungService = {
         throw new Error('위도와 경도 정보가 필요합니다.')
       }
 
-      const response = await api.get('/public/locations/nearby', {
+      const response = await api.get('/locations/nearby', {
         params: { latitude, longitude, radius, limit }
       })
       return response.data
