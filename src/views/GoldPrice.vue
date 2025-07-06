@@ -295,8 +295,7 @@ const currentPriceData = computed(() => {
         { name: '금 24K', price: 542000, change: 0.0, unit: '1g' },
         { name: '금 18K', price: 398400, change: 0.0, unit: '1g' },
         { name: '금 14K', price: 309000, change: 0.0, unit: '1g' },
-        { name: '은', price: 5660, change: 0.71, unit: '1g' },
-        { name: '백금(Pt)', price: 216000, change: -0.92, unit: '1g' }
+        { name: '은', price: 5660, change: 0.71, unit: '1g' }
       ]
     }
   }
@@ -319,7 +318,10 @@ const currentPriceData = computed(() => {
   } else if (selectedCategory.value === 'platinum') {
     return allPrices.filter(price => price.name.includes('백금') || price.name.includes('Pt'))
   } else {
-    return allPrices
+    // 'all' 카테고리에서는 금과 은만 표시 (백금 제외)
+    return allPrices.filter(price => 
+      price.name.includes('금') || price.name.includes('24K') || price.name.includes('18K') || price.name.includes('14K') || price.name.includes('은')
+    )
   }
 })
 
@@ -509,7 +511,7 @@ const chartData = computed(() => {
     })
   }
   
-  if (selectedCategory.value === 'platinum' || selectedCategory.value === 'all') {
+  if (selectedCategory.value === 'platinum') {
     datasets.push({
       label: '백금',
       data: generatePriceData(216000),
