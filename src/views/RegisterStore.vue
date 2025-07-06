@@ -1,10 +1,11 @@
 <template>
   <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-6xl mx-auto px-4">
-      <h1 class="text-3xl font-bold text-center mb-8 text-secondary">협력점 안내</h1>
+      <h1 class="text-3xl font-semibold text-center mb-8 text-secondary">협력점 안내</h1>
 
       <!-- 지점 목록 및 검색 -->
       <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        
         <div class="flex flex-col lg:flex-row gap-4 mb-6">
           <h2 class="text-2xl font-semibold text-secondary">협력점 위치</h2>
           

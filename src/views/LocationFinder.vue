@@ -1,7 +1,7 @@
 <template>
   <div class="location-finder-page">
     <div class="page-container">
-      <h1 class="page-title">인근 지점 찾기</h1>
+      <h1 class="text-3xl font-semibold text-center mb-8 text-secondary">인근 지점 찾기</h1>
       <div class="content">
         <div class="search-section">
           <div class="search-controls">

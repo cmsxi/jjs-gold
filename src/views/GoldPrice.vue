@@ -1,13 +1,12 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <!-- 오늘의 시세 (상단 고정) -->
-    <div class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 shadow-xl border-b border-gray-700 sticky top-0 z-10 py-6">
-      <div class="max-w-7xl mx-auto px-4">
-        <h2 class="text-xl font-bold text-white mb-6 text-center flex items-center justify-center gap-2">
-          
-          {{ todayDate }}
-        </h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+  <div class="min-h-screen bg-gray-50 pb-8">
+    <div class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 shadow-xl border-b border-gray-700 sticky top-0 z-10 py-10">
+      <div class="max-w-7xl mx-auto px-4 ">
+        <h1 class="text-center text-3xl py-2 font-semibold text-white mb-12">
+          오늘의 시세 {{ todayDate }}
+        </h1>
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pb-6">
           <div 
             v-for="metal in todayPrices" 
             :key="metal.name"

@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 py-11">
-    <h1 class="text-center text-4xl font-light text-secondary mb-12">
+    <h1 class="text-center text-3xl font-semibold text-secondary mb-12">
       매입 절차 안내
     </h1>
     <!-- 탭 메뉴 -->
@@ -10,7 +10,7 @@
     <div class="max-w-[1100px] mx-auto px-4">
             <!-- 매입 절차 -->
       <div class="p-8 md:p-12">
-        <h2 class="text-left text-3xl font-semibold text-secondary mb-20">
+        <h2 class="text-left text-2xl font-semibold text-secondary mb-20">
           {{ currentProcessData.title }}
         </h2>
 
