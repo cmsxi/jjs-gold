@@ -33,14 +33,14 @@
         </div>
         
         <!-- 로딩 상태 -->
-        <div v-if="loading" class="loading-section">
+        <!-- <div v-if="loading" class="loading-section">
           <div class="text-center py-12">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
             <p class="mt-4 text-gray-600">지점 정보를 불러오는 중...</p>
           </div>
         </div>
         
-        <!-- 오류 상태 -->
+        오류 상태
         <div v-else-if="error" class="error-section">
           <div class="text-center py-12">
             <div class="text-red-600 mb-4">
@@ -55,9 +55,9 @@
               다시 시도
             </button>
           </div>
-        </div>
+        </div> -->
         
-        <div v-else class="table-section">
+        <div class="table-section">
           <h2 class="section-title">검색결과 ({{ totalCount }}개)</h2>
           <div class="table-container" v-if="paginatedLocations.length > 0">
             <table class="locations-table">
@@ -93,7 +93,8 @@
                   </td>
                   <td> 
                     <button v-if="location.kakao_channel" @click="openKakaoChannel(location.kakao_channel)" class="talk-button">
-                      <span class="talk-text">톡채널</span> 
+                      <span class="talk-text-desktop">톡채널</span>
+                      <img :src=KakaoTalk alt="톡" class="talk-icon-mobile"> 
                     </button>
                     <span v-else class="no-channel">-</span>
                   </td>
@@ -172,6 +173,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { jinjungsungService } from '@/services/jinjungsungService.js'
+import KakaoTalk from '@/assets/images/kakaotalk.png'
 
 const router = useRouter()
 
@@ -284,11 +286,14 @@ const sortedLocations = computed(() => {
 })
 
 // 페이지네이션 적용된 지점 목록
-const paginatedLocations = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value
-  const end = start + itemsPerPage.value
-  return sortedLocations.value.slice(start, end)
-})
+// const paginatedLocations = computed(() => {
+//   const start = (currentPage.value - 1) * itemsPerPage.value
+//   const end = start + itemsPerPage.value
+//   return sortedLocations.value.slice(start, end)
+// })
+const paginatedLocations = ref([
+  {district: 0, name: 0, address: 0, detail_address: 0, phone: 0, kakao_channel: 1, location: 0 }
+])
 
 // 페이지네이션 계산된 속성들
 const totalPages = computed(() => {
@@ -565,6 +570,15 @@ onMounted(() => {
   background: #fdd500;
 }
 
+.talk-text-desktop{
+  display: inline;
+}
+.talk-icon-mobile{
+  display: none;
+  width: 15px; 
+  height: 15px; 
+}
+
 .no-channel {
   color: #9ca3af;
   font-size: 0.875rem;
@@ -711,6 +725,16 @@ onMounted(() => {
   
   .phone-button {
     display: inline;
+  }
+
+  /* 모바일에서 톡채널 아이콘 표시 */
+  .talk-text-desktop{
+    display: none;
+  }
+  .talk-icon-mobile{
+    display: inline-block;
+    width: 15px; 
+    height: 15px; 
   }
   
   /* 모바일에서 페이지네이션 간소화 */
