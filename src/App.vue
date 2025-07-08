@@ -26,7 +26,7 @@ import Footer from "./components/Footer.vue";
 
 @media (max-width: 768px) {
   .content {
-    padding-top: 60px;
+    padding-top: 80px;
   }
 }
 </style>
