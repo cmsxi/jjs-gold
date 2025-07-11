@@ -76,7 +76,7 @@
             :class="selectedCategory === category.id 
               ? 'bg-gradient-to-r from-primary to-yellow-600 text-white shadow-md' 
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-            class="px-6 py-3 rounded-md font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-5 md:px-6 py-3 rounded-md font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ category.name }}
           </button>
@@ -94,7 +94,7 @@
         </div>
 
         <!-- 차트와 실시간 데이터 -->
-        <div class="grid lg:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <!-- 차트 -->
           <div class="lg:col-span-2">
             <div class="h-96 relative">

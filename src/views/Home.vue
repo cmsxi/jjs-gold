@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100/30 to-gray-200">
     <!-- 배너 영역: 프리미엄 그라데이션 배경 -->
-    <section class="relative w-full h-[70vh] min-h-[400px] flex flex-col md:flex-row overflow-hidden">
+    <section class="relative w-full md:h-[80vh] min-h-[400px] flex flex-col md:flex-row overflow-hidden">
       <!-- 그라데이션 배경 -->
       <div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800"></div>
       <!-- 배경 이미지 오버레이 -->
@@ -12,7 +12,7 @@
       <div class="relative z-10 flex-1 w-full flex flex-col justify-center items-center">
         <div class="w-full max-w-[1200px] flex flex-col md:flex-row items-center justify-between gap-8 px-4 md:px-8">
           <!-- 좌측 시세 카드 리스트 -->
-          <div class="flex-1 flex flex-col justify-center min-w-[360px] md:min-w-[400px]">
+          <div class="flex-1 flex flex-col justify-center min-w-[360px] md:min-w-[400px] py-10">
                <h2 class="text-2xl md:text-3xl font-light text-white mb-2 tracking-tight w-full text-center justify-center">
                 <span class="font-extrabold bg-gradient-to-r from-primary via-yellow-400 to-primary bg-clip-text text-transparent">진정성 금거래소</span> 
                 <span class="text-white/90"> 금 매입 시세</span>

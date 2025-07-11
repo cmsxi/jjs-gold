@@ -57,7 +57,7 @@
           </div>
         </div>
         
-        <div v-else class="table-section">
+        <div class="table-section">
           <h2 class="section-title">검색결과 ({{ totalCount }}개)</h2>
           <div class="table-container" v-if="paginatedLocations.length > 0">
             <table class="locations-table">
@@ -93,7 +93,8 @@
                   </td>
                   <td> 
                     <button v-if="location.kakao_channel" @click="openKakaoChannel(location.kakao_channel)" class="talk-button">
-                      <span class="talk-text">톡채널</span> 
+                      <span class="talk-text-desktop">톡채널</span>
+                      <img :src=KakaoTalk alt="톡" class="talk-icon-mobile"> 
                     </button>
                     <span v-else class="no-channel">-</span>
                   </td>
@@ -172,6 +173,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { jinjungsungService } from '@/services/jinjungsungService.js'
+import KakaoTalk from '@/assets/images/kakaotalk.png'
 
 const router = useRouter()
 
@@ -565,6 +567,15 @@ onMounted(() => {
   background: #fdd500;
 }
 
+.talk-text-desktop{
+  display: inline;
+}
+.talk-icon-mobile{
+  display: none;
+  width: 15px; 
+  height: 15px; 
+}
+
 .no-channel {
   color: #9ca3af;
   font-size: 0.875rem;
@@ -711,6 +722,16 @@ onMounted(() => {
   
   .phone-button {
     display: inline;
+  }
+
+  /* 모바일에서 톡채널 아이콘 표시 */
+  .talk-text-desktop{
+    display: none;
+  }
+  .talk-icon-mobile{
+    display: inline-block;
+    width: 15px; 
+    height: 15px; 
   }
   
   /* 모바일에서 페이지네이션 간소화 */
